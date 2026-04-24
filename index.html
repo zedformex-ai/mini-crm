@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Zedformex CRM</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -30,7 +29,10 @@ body {
 .header {
   background: var(--primary);
   padding: 14px 20px;
+  display: flex;
+  align-items: center;
 }
+
 .header img {
   height: 36px;
 }
@@ -50,18 +52,14 @@ body {
   margin-bottom: 16px;
 }
 
-/* CONTROLS */
-.controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
+/* INPUTS */
 input, select {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   font-size: 14px;
+  width: 100%;
+  margin-bottom: 8px;
 }
 
 button {
@@ -70,7 +68,6 @@ button {
   border: none;
   padding: 10px 14px;
   border-radius: 8px;
-  font-weight: 500;
   cursor: pointer;
 }
 
@@ -84,14 +81,6 @@ button:hover {
   padding: 14px;
   border-radius: 10px;
   margin-top: 10px;
-}
-
-.lead-name {
-  font-weight: 600;
-}
-
-.phone {
-  color: var(--primary);
 }
 
 .actions {
@@ -128,38 +117,49 @@ textarea {
 
 /* MOBILE */
 @media (max-width: 600px) {
-  .controls { flex-direction: column; }
-  input, select, button { width: 100%; font-size: 16px; }
+  .container { padding: 10px; }
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <img src="logo.png">
+<!-- LOGIN -->
+<div id="authBox" class="container">
+  <div class="card">
+    <h3>Login</h3>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Signup</button>
+  </div>
 </div>
 
-<div class="container">
+<!-- APP -->
+<div id="app" style="display:none;">
 
-  <!-- UPLOAD -->
-  <div class="card">
-    <div class="controls">
-      <input type="file" id="fileInput">
-      <button onclick="uploadExcel()">Upload Leads</button>
-    </div>
-
-    <div id="progressBox" class="progress-container">
-      <div class="progress-bar-bg">
-        <div id="progressBar" class="progress-bar"></div>
-      </div>
-      <div id="progressText">Uploading...</div>
-    </div>
+  <div class="header">
+    <img src="logo.png">
+    <button onclick="logout()" style="margin-left:auto;">Logout</button>
   </div>
 
-  <!-- FILTER -->
-  <div class="card">
-    <div class="controls">
+  <div class="container">
+
+    <!-- UPLOAD -->
+    <div class="card">
+      <input type="file" id="fileInput">
+      <button onclick="uploadExcel()">Upload Leads</button>
+
+      <div id="progressBox" class="progress-container">
+        <div class="progress-bar-bg">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="progressText">Uploading...</div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="card">
       <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
 
       <select id="statusFilter" onchange="loadLeads()">
@@ -170,11 +170,12 @@ textarea {
         <option value="closed">Closed</option>
       </select>
     </div>
-  </div>
 
-  <!-- LEADS -->
-  <div class="card">
-    <div id="leads"></div>
+    <!-- LEADS -->
+    <div class="card">
+      <div id="leads"></div>
+    </div>
+
   </div>
 
 </div>
@@ -187,18 +188,56 @@ const client = supabase.createClient(
 );
 
 
-// 🔥 FIXED UPLOAD
+// AUTH
+async function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) return alert(error.message);
+
+  checkUser();
+}
+
+async function signup() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+
+  const { error } = await client.auth.signUp({ email, password });
+  if (error) return alert(error.message);
+
+  alert("Signup done. Now login.");
+}
+
+async function logout() {
+  await client.auth.signOut();
+  location.reload();
+}
+
+async function checkUser() {
+  const { data } = await client.auth.getUser();
+
+  if (data.user) {
+    document.getElementById('authBox').style.display = "none";
+    document.getElementById('app').style.display = "block";
+    loadLeads();
+  } else {
+    document.getElementById('authBox').style.display = "block";
+    document.getElementById('app').style.display = "none";
+  }
+}
+
+
+// UPLOAD (fixed)
 async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
-  if (!file) return alert("Select a file");
+  if (!file) return alert("Select file");
 
   const progressBox = document.getElementById('progressBox');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
 
   progressBox.style.display = "block";
-  progressBar.style.width = "0%";
-  progressText.innerText = "Reading file...";
 
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
@@ -219,12 +258,11 @@ async function uploadExcel() {
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
 
-    const { error } = await client.from('leads').insert(chunk);
+    const { error } = await client
+      .from('leads')
+      .upsert(chunk, { onConflict: 'phone' });
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     uploaded += chunk.length;
     const percent = Math.round((uploaded / rows.length) * 100);
@@ -232,7 +270,7 @@ async function uploadExcel() {
     progressText.innerText = `Uploading ${percent}%`;
   }
 
-  progressText.innerText = "Done ✅";
+  progressText.innerText = "Done";
   loadLeads();
 }
 
@@ -245,13 +283,10 @@ async function loadLeads() {
   const { data } = await client.from('leads').select('*').limit(100);
 
   const filtered = data.filter(l => {
-    const matchSearch =
+    return (
       (l.name || "").toLowerCase().includes(search) ||
-      (l.phone || "").includes(search);
-
-    const matchStatus = status ? l.status === status : true;
-
-    return matchSearch && matchStatus;
+      (l.phone || "").includes(search)
+    ) && (!status || l.status === status);
   });
 
   const container = document.getElementById('leads');
@@ -262,20 +297,15 @@ async function loadLeads() {
     div.className = "lead";
 
     div.innerHTML = `
-      <div class="lead-name">${lead.name || ''}</div>
-      <div class="phone">📞 ${lead.phone || ''}</div>
-      <div>
-  ✉️ ${lead.email || 'No email'}
-</div>
+      <b>${lead.name || ''}</b><br>
+      📞 ${lead.phone || ''}<br>
+      ✉️ ${lead.email || 'No email'}<br>
 
-<div class="actions">
-  <button onclick="copy('${lead.phone}')">Copy Phone</button>
-
-  ${lead.email ? `
-    <button onclick="copy('${lead.email}')">Copy Email</button>
-    <button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>
-  ` : ''}
-</div>
+      <div class="actions">
+        <button onclick="copy('${lead.phone}')">Copy Phone</button>
+        ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
+        ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
+      </div>
 
       <br>
 
@@ -301,7 +331,6 @@ async function loadLeads() {
 // UTIL
 function copy(text) {
   navigator.clipboard.writeText(text);
-  alert("Copied!");
 }
 
 async function updateStatus(id, status) {
@@ -313,24 +342,17 @@ async function updateComment(id, comment) {
 }
 
 function sendEmail(email, name) {
-  if (!email) return alert("No email available");
-
   const subject = encodeURIComponent("Quick follow-up");
-  const body = encodeURIComponent(
-`Hi ${name || ""},
+  const body = encodeURIComponent(`Hi ${name || ""},
 
-Great speaking with you.
-
-Here’s a Google Meet link:
-https://meet.google.com/new
-
-Regards`
-  );
+Let’s connect:
+https://meet.google.com/new`);
 
   window.open(`mailto:${email}?subject=${subject}&body=${body}`);
 }
 
-loadLeads();
+
+checkUser();
 
 </script>
 
