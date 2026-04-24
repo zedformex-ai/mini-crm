@@ -9,9 +9,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-<!-- Supabase (stable CDN) -->
+<!-- Supabase (stable global version) -->
 
-
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
 body {
@@ -99,16 +99,14 @@ select {
 
 </div>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+<script>
+const SUPABASE_URL = "https://vdyelvzodduuzmmlocnp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
 
-const SUPABASE_URL = "https://vdyelvzodduuzmmlocnp.supabase.co"
-const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
-
-const client = createClient(SUPABASE_URL, SUPABASE_KEY)
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Upload Excel
-window.uploadExcel = async function () {
+async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select a file");
 
@@ -162,26 +160,33 @@ async function loadLeads() {
 
       Comment:<br>
       <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
-    `;
 
-    container.appendChild(div);
-  });
+```
+`;
+
+container.appendChild(div);
+```
+
+});
 }
 
-window.copy = function(text) {
-  navigator.clipboard.writeText(text);
+// Copy phone
+function copy(text) {
+navigator.clipboard.writeText(text);
 }
 
-window.updateStatus = async function(id, status) {
-  await client.from('leads').update({ status }).eq('id', id);
+// Update status
+async function updateStatus(id, status) {
+await client.from('leads').update({ status }).eq('id', id);
 }
 
-window.updateComment = async function(id, comment) {
-  await client.from('leads').update({ comment }).eq('id', id);
+// Update comment
+async function updateComment(id, comment) {
+await client.from('leads').update({ comment }).eq('id', id);
 }
 
-loadLeads()
-</script>
+// Initial load
+loadLeads(); </script>
 
 </body>
 </html>
