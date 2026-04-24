@@ -5,69 +5,144 @@
 <meta charset="UTF-8">
 <title>Mini CRM</title>
 
-<!-- Excel parser -->
+<!-- Excel -->
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-<!-- Supabase (stable global version) -->
+<!-- Supabase -->
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial;
-  background: #f5f6fa;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
   margin: 0;
-  padding: 20px;
+  padding: 30px;
+  color: #1e293b;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 900px;
   margin: auto;
+}
+
+.header {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 
 .card {
   background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 22px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
   margin-bottom: 20px;
 }
 
-h1 { margin-bottom: 10px; }
-
 .instructions {
   font-size: 14px;
-  color: #555;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+input[type="file"] {
+  margin-top: 10px;
 }
 
 button {
-  padding: 8px 14px;
-  border: none;
-  background: #007bff;
+  background: #4f46e5;
   color: white;
-  border-radius: 6px;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: 0.2s;
 }
 
-button:hover { background: #0056b3; }
+button:hover {
+  background: #4338ca;
+}
 
 .lead {
-  border: 1px solid #ddd;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+  transition: 0.2s;
+}
+
+.lead:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.lead-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.phone {
+  color: #6366f1;
+  font-weight: 500;
 }
 
 textarea {
   width: 100%;
   height: 60px;
-  margin-top: 5px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 6px;
 }
 
 select {
-  margin-top: 5px;
+  margin-top: 6px;
+  border-radius: 6px;
+  padding: 4px;
 }
+
+.progress-container {
+  margin-top: 12px;
+  display: none;
+}
+
+.progress-bar-bg {
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 10px;
+  width: 0%;
+  background: linear-gradient(90deg, #4f46e5, #22c55e);
+  transition: 0.3s;
+}
+
+.progress-text {
+  font-size: 13px;
+  margin-top: 4px;
+  color: #475569;
+}
+
+.copy-btn {
+  background: #10b981;
+}
+
+.copy-btn:hover {
+  background: #059669;
+}
+
 </style>
 
 </head>
@@ -76,36 +151,43 @@ select {
 
 <div class="container">
 
+  <div class="header">📊 Mini CRM</div>
+
   <div class="card">
-    <h1>📊 Mini CRM</h1>
-    <p class="instructions">
-      Upload Excel with columns: <b>name</b> and <b>phone</b><br>
-      Example:<br>
-      name | phone<br>
-      John Doe | 9876543210
-    </p>
+    <div class="instructions">
+      Upload Excel with <b>name</b> and <b>phone</b>
+    </div>
 
-
+```
 <input type="file" id="fileInput">
 <button onclick="uploadExcel()">Upload Leads</button>
 
+<div id="progressBox" class="progress-container">
+  <div class="progress-bar-bg">
+    <div id="progressBar" class="progress-bar"></div>
+  </div>
+  <div id="progressText" class="progress-text">Uploading...</div>
+</div>
+```
 
   </div>
 
   <div class="card">
-    <h2>📞 Leads</h2>
+    <h3>📞 Leads</h3>
     <div id="leads"></div>
   </div>
 
 </div>
 
 <script>
+
 const SUPABASE_URL = "https://vdyelzvodduuzmmlocnp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Upload Excel
+
+// UPLOAD
 async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select a file");
@@ -114,90 +196,77 @@ async function uploadExcel() {
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
 
-if (progressBox) progressBox.style.display = "block";
-if (progressBar) progressBar.style.width = "0%";
-if (progressText) progressText.innerText = "Preparing data...";
-  progressBar.style.width = "0%";
-  progressText.innerText = "Preparing data...";
+  progressBox.style.display = "block";
 
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet);
 
-  const rows = json.map(row => ({
-    name: row.name || row.Name || "",
-    phone: (row.phone || row.Phone || "").toString()
+  const rows = json.map(r => ({
+    name: r.name || r.Name || "",
+    phone: (r.phone || r.Phone || "").toString()
   }));
 
-  const chunkSize = 50; // ⚡ controls speed vs stability
   let uploaded = 0;
+  const chunkSize = 50;
 
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize);
 
     const { error } = await client.from('leads').insert(chunk);
-
-    if (error) {
-      console.error(error);
-      alert("Upload failed: " + error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     uploaded += chunk.length;
 
-    // 🔥 Update progress
     const percent = Math.round((uploaded / rows.length) * 100);
     progressBar.style.width = percent + "%";
-    progressText.innerText = `Uploading ${uploaded}/${rows.length} (${percent}%)`;
+    progressText.innerText = `Uploading ${percent}%`;
   }
 
-  progressText.innerText = "Upload complete!";
-  progressBar.style.width = "100%";
-
+  progressText.innerText = "Done!";
   loadLeads();
 }
-<div id="progressBox" style="margin-top:10px; display:none;">
-  <div style="background:#ddd; border-radius:6px; overflow:hidden;">
-    <div id="progressBar" style="height:10px; width:0%; background:#28a745;"></div>
-  </div>
-  <p id="progressText" style="font-size:13px; margin-top:5px;">Uploading...</p>
-</div>
-// Load leads
+
+
+// LOAD
 async function loadLeads() {
   const { data, error } = await client
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error(error);
-    alert("Error loading leads: " + error.message);
-    return;
-  }
+  if (error) return alert(error.message);
 
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
-  data.forEach(lead => {
+  data.forEach(l => {
     const div = document.createElement('div');
     div.className = "lead";
 
     div.innerHTML = `
-      <b>${lead.name || ''}</b><br>
-      📞 ${lead.phone || ''} 
-      <button onclick="copy('${lead.phone}')">Copy</button><br><br>
+      <div class="lead-header">
+        <div><b>${l.name}</b></div>
+        <div class="phone">${l.phone}</div>
+      </div>
+
+      <button class="copy-btn" onclick="copy('${l.phone}')">Copy</button>
+
+      <br><br>
 
       Status:
-      <select onchange="updateStatus('${lead.id}', this.value)">
-        <option ${lead.status==='new'?'selected':''}>new</option>
-        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-        <option ${lead.status==='followup'?'selected':''}>followup</option>
-        <option ${lead.status==='closed'?'selected':''}>closed</option>
-      </select><br><br>
+      <select onchange="updateStatus('${l.id}', this.value)">
+        <option ${l.status==='new'?'selected':''}>new</option>
+        <option ${l.status==='contacted'?'selected':''}>contacted</option>
+        <option ${l.status==='followup'?'selected':''}>followup</option>
+        <option ${l.status==='closed'?'selected':''}>closed</option>
+      </select>
 
-      Comment:<br>
-      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
+      <br><br>
+
+      Notes:
+      <textarea onchange="updateComment('${l.id}', this.value)">${l.comment || ''}</textarea>
 
 ```
 `;
@@ -208,23 +277,22 @@ container.appendChild(div);
 });
 }
 
-// Copy phone
+// UTIL
 function copy(text) {
 navigator.clipboard.writeText(text);
 }
 
-// Update status
 async function updateStatus(id, status) {
 await client.from('leads').update({ status }).eq('id', id);
 }
 
-// Update comment
 async function updateComment(id, comment) {
 await client.from('leads').update({ comment }).eq('id', id);
 }
 
-// Initial load
-loadLeads(); </script>
+loadLeads();
+
+</script>
 
 </body>
 </html>
