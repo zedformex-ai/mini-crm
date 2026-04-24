@@ -2,7 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Mini CRM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Zedformex CRM</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -10,43 +12,66 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+
+:root {
+  --primary: #1f5f99;   /* 🔵 logo blue */
+  --primary-dark: #174a77;
+  --accent: #3b82f6;
+  --bg: #f4f8fc;
+}
+
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Inter', sans-serif;
-  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+  background: var(--bg);
   margin: 0;
-  padding: 30px;
   color: #1e293b;
 }
 
+/* HEADER */
+.header {
+  background: var(--primary);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+}
+
+.header img {
+  height: 36px;
+}
+
+/* LAYOUT */
 .container {
   max-width: 900px;
   margin: auto;
-}
-
-.header {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 20px;
+  padding: 15px;
 }
 
 .card {
   background: white;
-  padding: 22px;
-  border-radius: 14px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
 }
 
-.instructions {
+/* CONTROLS */
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
   font-size: 14px;
-  color: #64748b;
-  margin-bottom: 12px;
 }
 
 button {
-  background: #4f46e5;
+  background: var(--primary);
   color: white;
   border: none;
   padding: 10px 14px;
@@ -56,106 +81,118 @@ button {
 }
 
 button:hover {
-  background: #4338ca;
+  background: var(--primary-dark);
 }
 
-input, select {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.top-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
+/* LEADS */
 .lead {
   border: 1px solid #e2e8f0;
   padding: 14px;
   border-radius: 10px;
-  margin-top: 12px;
-  transition: 0.2s;
+  margin-top: 10px;
+  background: #fff;
 }
 
-.lead:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.06);
+.lead-name {
+  font-weight: 600;
+  font-size: 15px;
 }
 
 .phone {
-  color: #6366f1;
-  font-weight: 500;
+  color: var(--primary);
+  margin-top: 4px;
+}
+
+/* ACTIONS */
+.actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 textarea {
   width: 100%;
-  height: 60px;
-  margin-top: 6px;
+  margin-top: 8px;
   border-radius: 8px;
+  padding: 8px;
   border: 1px solid #e2e8f0;
-  padding: 6px;
 }
 
+/* PROGRESS */
 .progress-container {
-  margin-top: 12px;
+  margin-top: 10px;
   display: none;
 }
 
 .progress-bar-bg {
   background: #e5e7eb;
   border-radius: 10px;
-  overflow: hidden;
 }
 
 .progress-bar {
-  height: 10px;
+  height: 8px;
   width: 0%;
-  background: linear-gradient(90deg, #4f46e5, #22c55e);
+  background: linear-gradient(90deg, var(--primary), #22c55e);
 }
 
-.progress-text {
-  font-size: 13px;
-  margin-top: 4px;
+/* 📱 MOBILE OPTIMIZATION */
+@media (max-width: 600px) {
+
+  .controls {
+    flex-direction: column;
+  }
+
+  input, select, button {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .lead {
+    padding: 16px;
+  }
+
+  .lead-name {
+    font-size: 16px;
+  }
+
 }
 
-.action-row {
-  margin-top: 8px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
 </style>
 
 </head>
 
 <body>
 
+<!-- HEADER WITH YOUR LOGO -->
+<div class="header">
+  <img src="https://chat.openai.com/c/file_000000009f787208aa2136e1d3c3d49f" alt="Zedformex">
+</div>
+
 <div class="container">
 
-  <div class="header">📊 Mini CRM</div>
-
+  <!-- UPLOAD -->
   <div class="card">
-    <div class="instructions">
-      Upload Excel with <b>name</b> and <b>phone</b>
-    </div>
 
-    <input type="file" id="fileInput">
-    <button onclick="uploadExcel()">Upload Leads</button>
+    <div class="controls">
+      <input type="file" id="fileInput">
+      <button onclick="uploadExcel()">Upload Leads</button>
+    </div>
 
     <div id="progressBox" class="progress-container">
       <div class="progress-bar-bg">
         <div id="progressBar" class="progress-bar"></div>
       </div>
-      <div id="progressText" class="progress-text">Uploading...</div>
+      <div id="progressText">Uploading...</div>
     </div>
+
   </div>
 
+  <!-- FILTERS -->
   <div class="card">
 
-    <div class="top-controls">
-      <input id="searchBox" placeholder="Search name or phone..." oninput="loadLeads()" style="flex:1;">
+    <div class="controls">
+      <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
       
       <select id="statusFilter" onchange="loadLeads()">
         <option value="">All</option>
@@ -166,9 +203,11 @@ textarea {
       </select>
     </div>
 
-    <h3>📞 Leads</h3>
-    <div id="leads"></div>
+  </div>
 
+  <!-- LEADS -->
+  <div class="card">
+    <div id="leads"></div>
   </div>
 
 </div>
@@ -183,8 +222,9 @@ const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // UPLOAD
 async function uploadExcel() {
+
   const file = document.getElementById('fileInput').files[0];
-  if (!file) return alert("Select a file");
+  if (!file) return alert("Select file");
 
   const progressBox = document.getElementById('progressBox');
   const progressBar = document.getElementById('progressBar');
@@ -203,48 +243,38 @@ async function uploadExcel() {
   })).filter(r => r.name && r.phone);
 
   let uploaded = 0;
-  const chunkSize = 50;
 
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
+  for (let row of rows) {
 
-    const { error } = await client.from('leads').insert(chunk);
+    const { error } = await client.from('leads').insert(row);
     if (error) return alert(error.message);
 
-    uploaded += chunk.length;
+    uploaded++;
 
     const percent = Math.round((uploaded / rows.length) * 100);
     progressBar.style.width = percent + "%";
-    progressText.innerText = `Uploading ${percent}%`;
+    progressText.innerText = percent + "%";
   }
 
-  progressText.innerText = "Done!";
-  await loadLeads();
+  progressText.innerText = "Done";
+  loadLeads();
 }
 
 
 // LOAD
 async function loadLeads() {
 
-  const search = document.getElementById("searchBox")?.value?.toLowerCase() || "";
-  const statusFilter = document.getElementById("statusFilter")?.value;
+  const search = document.getElementById("searchBox").value.toLowerCase();
+  const status = document.getElementById("statusFilter").value;
 
-  const { data, error } = await client
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  const { data } = await client.from('leads').select('*');
 
   const filtered = data.filter(l => {
     const matchSearch =
       (l.name || "").toLowerCase().includes(search) ||
       (l.phone || "").includes(search);
 
-    const matchStatus = statusFilter ? l.status === statusFilter : true;
+    const matchStatus = status ? l.status === status : true;
 
     return matchSearch && matchStatus;
   });
@@ -253,14 +283,14 @@ async function loadLeads() {
   container.innerHTML = "";
 
   filtered.forEach(lead => {
+
     const div = document.createElement('div');
     div.className = "lead";
 
     div.innerHTML = `
-      <b>${lead.name}</b><br>
-      <span class="phone">📞 ${lead.phone}</span><br><br>
+      <div class="lead-name">${lead.name}</div>
+      <div class="phone">📞 ${lead.phone}</div>
 
-      Status:
       <select onchange="updateStatus('${lead.id}', this.value)">
         <option ${lead.status==='new'?'selected':''}>new</option>
         <option ${lead.status==='contacted'?'selected':''}>contacted</option>
@@ -268,20 +298,18 @@ async function loadLeads() {
         <option ${lead.status==='closed'?'selected':''}>closed</option>
       </select>
 
-      <br><br>
-
-      Comment:
       <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ""}</textarea>
 
-      <div class="action-row">
-        <button onclick="copy('${lead.phone}')">📋 Copy</button>
-        <button onclick="updateStatus('${lead.id}','contacted')">✅ Contacted</button>
-        <button onclick="updateStatus('${lead.id}','closed')">✔ Close</button>
+      <div class="actions">
+        <button onclick="copy('${lead.phone}')">Copy</button>
+        <button onclick="updateStatus('${lead.id}','contacted')">Contacted</button>
+        <button onclick="updateStatus('${lead.id}','closed')">Close</button>
       </div>
     `;
 
     container.appendChild(div);
   });
+
 }
 
 
