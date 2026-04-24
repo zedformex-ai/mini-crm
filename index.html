@@ -343,99 +343,104 @@ const rows = json.map(r => ({
 
 // LOAD
 async function loadLeads() {
+
+  const { data, error } = await client
+    .from('leads')
+    .select('*')
+    .limit(100);
+
+  if (error) {
+    console.error(error);
+    alert("Error loading leads");
+    return;
+  }
+
   const now = new Date();
 
-const followupsToday = data.filter(l => {
-  if (!l.followup_at) return false;
-
-  const f = new Date(l.followup_at);
-
-  return (
-    f.getDate() === now.getDate() &&
-    f.getMonth() === now.getMonth() &&
-    f.getFullYear() === now.getFullYear()
-  );
-});
   const search = document.getElementById("searchBox").value.toLowerCase();
   const status = document.getElementById("statusFilter").value;
-
-  const { data } = await client.from('leads').select('*').limit(100);
   const type = document.getElementById("leadTypeFilter").value;
 
-const filtered = data.filter(l => {
-  return (
-    ((l.name || "").toLowerCase().includes(search) ||
-     (l.phone || "").includes(search)) &&
-    (!status || l.status === status) &&
-    (!type || l.lead_type === type)
-  );
-});
+  const filtered = data.filter(l => {
+
+    const matchSearch =
+      (l.name || "").toLowerCase().includes(search) ||
+      (l.phone || "").includes(search);
+
+    const matchStatus = !status || l.status === status;
+    const matchType = !type || l.lead_type === type;
+
+    return matchSearch && matchStatus && matchType;
+  });
+
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
-  data
-    .filter(l =>
-      ((l.name || "").toLowerCase().includes(search) ||
-       (l.phone || "").includes(search)) &&
-      (!status || l.status === status)
-    )
-    .forEach(lead => {
-      const div = document.createElement('div');
-      div.className = "lead";
+  filtered.forEach(lead => {
 
-      div.innerHTML = `
-        <b>${lead.name || ''}</b><br>
-        📞 ${lead.phone || ''}<br>
-        ✉️ ${lead.email || 'No email'}
-        🌐 ${lead.website 
-  ? `<a href="${lead.website.startsWith('http') ? lead.website : 'https://' + lead.website}" target="_blank">Visit</a>` 
-  : 'No website'}
-  <br><br>
+    const isToday = lead.followup_at &&
+      new Date(lead.followup_at).toDateString() === new Date().toDateString();
 
-Next Follow-up:
-<input 
-  type="datetime-local" 
-  value="${lead.followup_at ? new Date(lead.followup_at).toISOString().slice(0,16) : ''}" 
-  onchange="updateFollowup('${lead.id}', this.value)"
->
-  <br><br>
+    const div = document.createElement('div');
+    div.className = "lead " + (isToday ? "followup-today" : "");
 
-Lead Type:
-<select onchange="updateLeadType('${lead.id}', this.value)">
-  <option ${lead.lead_type==='Cold lead'?'selected':''}>Cold lead</option>
-  <option ${lead.lead_type==='Showed Interest'?'selected':''}>Showed Interest</option>
-  <option ${lead.lead_type==='Hot lead'?'selected':''}>Hot lead</option>
-  <option ${lead.lead_type==='Not interested'?'selected':''}>Not interested</option>
-</select>
-<br>
-        <br>
+    div.innerHTML = `
+      <b>${lead.name || ''}</b><br>
+      📞 ${lead.phone || ''}<br>
+      ✉️ ${lead.email || 'No email'}<br>
 
-        <div class="actions">
-          <button onclick="copy('${lead.phone}')">Copy Phone</button>
-          ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
-          ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
-        </div>
+      🌐 ${lead.website 
+        ? `<a href="${lead.website.startsWith('http') ? lead.website : 'https://' + lead.website}" target="_blank">Visit</a>` 
+        : 'No website'}
 
-        <br>
+      <br><br>
 
-        Status:
-        <select onchange="updateStatus('${lead.id}', this.value)">
-          <option ${lead.status==='new'?'selected':''}>new</option>
-          <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-          <option ${lead.status==='followup'?'selected':''}>followup</option>
-          <option ${lead.status==='closed'?'selected':''}>closed</option>
-        </select>
+      Next Follow-up:
+      <input 
+        type="datetime-local" 
+        value="${lead.followup_at ? new Date(lead.followup_at).toISOString().slice(0,16) : ''}" 
+        onchange="updateFollowup('${lead.id}', this.value)"
+      >
 
-        <br><br>
+      <br><br>
 
-        Comment:
-        <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
-      `;
+      Lead Type:
+      <select onchange="updateLeadType('${lead.id}', this.value)">
+        <option ${lead.lead_type==='Cold lead'?'selected':''}>Cold lead</option>
+        <option ${lead.lead_type==='Showed Interest'?'selected':''}>Showed Interest</option>
+        <option ${lead.lead_type==='Hot lead'?'selected':''}>Hot lead</option>
+        <option ${lead.lead_type==='Not interested'?'selected':''}>Not interested</option>
+      </select>
 
-      container.appendChild(div);
-    });
+      <br><br>
+
+      <div class="actions">
+        <button onclick="copy('${lead.phone}')">Copy Phone</button>
+        ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
+        ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
+      </div>
+
+      <br>
+
+      Status:
+      <select onchange="updateStatus('${lead.id}', this.value)">
+        <option ${lead.status==='new'?'selected':''}>new</option>
+        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+        <option ${lead.status==='followup'?'selected':''}>followup</option>
+        <option ${lead.status==='closed'?'selected':''}>closed</option>
+      </select>
+
+      <br><br>
+
+      Comment:
+      <textarea onchange="updateComment('${lead.id}', this.value)">
+        ${lead.comment || ''}
+      </textarea>
+    `;
+
+    container.appendChild(div);
+  });
 }
-
 // UTIL
 function copy(text) {
   navigator.clipboard.writeText(text);
