@@ -287,26 +287,36 @@ async function loadLeads() {
     const div = document.createElement('div');
     div.className = "lead";
 
-    div.innerHTML = `
-      <div class="lead-name">${lead.name}</div>
-      <div class="phone">📞 ${lead.phone}</div>
+   div.innerHTML = `
+  <div class="lead-header">
+    <b>${lead.name || ''}</b>
+    <button class="copy-btn" onclick="copy('${lead.phone}')">Copy</button>
+  </div>
 
-      <select onchange="updateStatus('${lead.id}', this.value)">
-        <option ${lead.status==='new'?'selected':''}>new</option>
-        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-        <option ${lead.status==='followup'?'selected':''}>followup</option>
-        <option ${lead.status==='closed'?'selected':''}>closed</option>
-      </select>
+  📞 ${lead.phone || ''}<br>
+  ✉️ ${lead.email || 'No email'}<br>
 
-      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ""}</textarea>
+  <button onclick="sendEmail('${lead.email}', '${lead.name}')">
+    Send Email
+  </button>
 
-      <div class="actions">
-        <button onclick="copy('${lead.phone}')">Copy</button>
-        <button onclick="updateStatus('${lead.id}','contacted')">Contacted</button>
-        <button onclick="updateStatus('${lead.id}','closed')">Close</button>
-      </div>
-    `;
+  <br><br>
 
+  Status:
+  <select onchange="updateStatus('${lead.id}', this.value)">
+    <option ${lead.status==='new'?'selected':''}>new</option>
+    <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+    <option ${lead.status==='followup'?'selected':''}>followup</option>
+    <option ${lead.status==='closed'?'selected':''}>closed</option>
+  </select>
+
+  <br><br>
+
+  Comment:
+  <textarea onchange="updateComment('${lead.id}', this.value)">
+    ${lead.comment || ''}
+  </textarea>
+`;
     container.appendChild(div);
   });
 
@@ -322,7 +332,25 @@ async function updateStatus(id, status) {
   await client.from('leads').update({ status }).eq('id', id);
   loadLeads();
 }
+window.sendEmail = function(email, name) {
+  if (!email) return alert("No email available");
 
+  const subject = encodeURIComponent("Quick follow-up");
+  const body = encodeURIComponent(
+    `Hi ${name || ""},
+
+Great speaking with you.
+
+Here’s a Google Meet link:
+https://meet.google.com/new
+
+Let’s connect.
+
+Regards`
+  );
+
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+}
 async function updateComment(id, comment) {
   await client.from('leads').update({ comment }).eq('id', id);
 }
