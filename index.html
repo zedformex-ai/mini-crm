@@ -239,6 +239,13 @@ textarea {
         <option value="followup">Follow Up</option>
         <option value="closed">Closed</option>
       </select>
+      <select id="leadTypeFilter" onchange="loadLeads()">
+  <option value="">All Types</option>
+  <option value="Cold lead">Cold lead</option>
+  <option value="Showed Interest">Showed Interest</option>
+  <option value="Hot lead">Hot lead</option>
+  <option value="Not interested">Not interested</option>
+</select>
     </div>
 
     <!-- LEADS -->
@@ -303,14 +310,14 @@ async function uploadExcel() {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet);
 
-  const rows = json.map(r => ({
-    name: r.name || r.Name || "",
-    phone: (r.phone || r.Phone || "").toString(),
-    email: r.email || "",
-    website: r.website || "",
-    owner_name: r.owner_name || ""
-  }));
-
+const rows = json.map(r => ({
+  name: r.name || r.Name || "",
+  phone: (r.phone || r.Phone || "").toString(),
+  email: r.email || "",
+  website: r.website || "",
+  owner_name: r.owner_name || "",
+  lead_type: r.lead_type || "Cold lead"
+}));
   let uploaded = 0;
 
   for (let i = 0; i < rows.length; i += 20) {
@@ -337,7 +344,16 @@ async function loadLeads() {
   const status = document.getElementById("statusFilter").value;
 
   const { data } = await client.from('leads').select('*').limit(100);
+  const type = document.getElementById("leadTypeFilter").value;
 
+const filtered = data.filter(l => {
+  return (
+    ((l.name || "").toLowerCase().includes(search) ||
+     (l.phone || "").includes(search)) &&
+    (!status || l.status === status) &&
+    (!type || l.lead_type === type)
+  );
+});
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
@@ -358,6 +374,15 @@ async function loadLeads() {
         🌐 ${lead.website 
   ? `<a href="${lead.website.startsWith('http') ? lead.website : 'https://' + lead.website}" target="_blank">Visit</a>` 
   : 'No website'}
+  <br><br>
+
+Lead Type:
+<select onchange="updateLeadType('${lead.id}', this.value)">
+  <option ${lead.lead_type==='Cold lead'?'selected':''}>Cold lead</option>
+  <option ${lead.lead_type==='Showed Interest'?'selected':''}>Showed Interest</option>
+  <option ${lead.lead_type==='Hot lead'?'selected':''}>Hot lead</option>
+  <option ${lead.lead_type==='Not interested'?'selected':''}>Not interested</option>
+</select>
 <br>
         <br>
 
@@ -399,7 +424,10 @@ async function updateStatus(id, status) {
 async function updateComment(id, comment) {
   await client.from('leads').update({ comment }).eq('id', id);
 }
-
+async function updateLeadType(id, lead_type) {
+  await client.from('leads').update({ lead_type }).eq('id', id);
+}
+  
 function sendEmail(email, name) {
   const subject = encodeURIComponent("Quick follow-up");
   const body = encodeURIComponent(`Hi ${name || ""},
