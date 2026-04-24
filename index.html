@@ -110,7 +110,13 @@ async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select a file");
 
-  alert("Uploading... please wait");
+  const progressBox = document.getElementById('progressBox');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+
+  progressBox.style.display = "block";
+  progressBar.style.width = "0%";
+  progressText.innerText = "Preparing data...";
 
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
@@ -122,20 +128,33 @@ async function uploadExcel() {
     phone: (row.phone || row.Phone || "").toString()
   }));
 
-  const { error } = await client.from('leads').insert(rows);
+  const chunkSize = 50; // ⚡ controls speed vs stability
+  let uploaded = 0;
 
-  if (error) {
-    console.error(error);
-    alert("Upload failed: " + error.message);
-    return;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+
+    const { error } = await client.from('leads').insert(chunk);
+
+    if (error) {
+      console.error(error);
+      alert("Upload failed: " + error.message);
+      return;
+    }
+
+    uploaded += chunk.length;
+
+    // 🔥 Update progress
+    const percent = Math.round((uploaded / rows.length) * 100);
+    progressBar.style.width = percent + "%";
+    progressText.innerText = `Uploading ${uploaded}/${rows.length} (${percent}%)`;
   }
 
-  alert("Upload complete!");
-  loadLeads();
-}
-  loadLeads();
-}
+  progressText.innerText = "Upload complete!";
+  progressBar.style.width = "100%";
 
+  loadLeads();
+}
 // Load leads
 async function loadLeads() {
   const { data, error } = await client
