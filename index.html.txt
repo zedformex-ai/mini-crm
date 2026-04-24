@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mini CRM</title>
+
+  <!-- Excel parser -->
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .lead { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    button { margin: 5px; }
+    textarea { width: 100%; height: 60px; }
+  </style>
+
+</head>
+<body>
+
+<h2>Mini CRM</h2>
+
+<input type="file" id="fileInput" />
+<button onclick="uploadExcel()">Upload Excel</button>
+
+<hr>
+
+<div id="leads"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// 🔑 REPLACE THESE
+const SUPABASE_URL = "https://vdyelvzodduuzmmlocnp.supabase.co"
+const SUPABASE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE"
+
+const client = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+// Upload Excel
+window.uploadExcel = async function () {
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return alert("Select a file");
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(sheet);
+
+  for (let row of json) {
+    await client.from('leads').insert({
+      name: row.name || row.Name,
+      phone: row.phone || row.Phone
+    });
+  }
+
+  loadLeads();
+}
+
+// Load leads
+async function loadLeads() {
+  const { data, error } = await client
+    .from('leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error(error);
+    alert("Error loading leads");
+    return;
+  }
+
+  const container = document.getElementById('leads');
+  container.innerHTML = "";
+
+  data.forEach(lead => {
+    const div = document.createElement('div');
+    div.className = "lead";
+
+    div.innerHTML = `
+      <b>${lead.name || ''}</b><br>
+      📞 ${lead.phone || ''} 
+      <button onclick="copy('${lead.phone}')">Copy</button><br><br>
+
+      Status:
+      <select onchange="updateStatus('${lead.id}', this.value)">
+        <option ${lead.status==='new'?'selected':''}>new</option>
+        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+        <option ${lead.status==='followup'?'selected':''}>followup</option>
+        <option ${lead.status==='closed'?'selected':''}>closed</option>
+      </select><br><br>
+
+      Comment:<br>
+      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
+
+```
+`;
+
+container.appendChild(div);
+```
+
+});
+}
+
+// Copy phone
+window.copy = function(text) {
+navigator.clipboard.writeText(text);
+alert("Copied!");
+}
+
+// Update status
+window.updateStatus = async function(id, status) {
+await client.from('leads').update({ status }).eq('id', id);
+}
+
+// Update comment
+window.updateComment = async function(id, comment) {
+await client.from('leads').update({ comment }).eq('id', id);
+}
+
+// Initial load
+loadLeads();
+
+</script>
+
+</body>
+</html>
