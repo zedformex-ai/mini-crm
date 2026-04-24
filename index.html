@@ -11,7 +11,7 @@
 
 <!-- Supabase (stable CDN) -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
 <style>
 body {
@@ -99,15 +99,16 @@ select {
 
 </div>
 
-<script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
 
 const SUPABASE_URL = "https://vdyelvzodduuzmmlocnp.supabase.co"
 const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+const client = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 // Upload Excel
-async function uploadExcel() {
+window.uploadExcel = async function () {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select a file");
 
@@ -161,35 +162,25 @@ async function loadLeads() {
 
       Comment:<br>
       <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
+    `;
 
-```
-`;
-
-container.appendChild(div);
-```
-
-});
+    container.appendChild(div);
+  });
 }
 
-// Copy phone
-function copy(text) {
-navigator.clipboard.writeText(text);
-alert("Copied!");
+window.copy = function(text) {
+  navigator.clipboard.writeText(text);
 }
 
-// Update status
-async function updateStatus(id, status) {
-await client.from('leads').update({ status }).eq('id', id);
+window.updateStatus = async function(id, status) {
+  await client.from('leads').update({ status }).eq('id', id);
 }
 
-// Update comment
-async function updateComment(id, comment) {
-await client.from('leads').update({ comment }).eq('id', id);
+window.updateComment = async function(id, comment) {
+  await client.from('leads').update({ comment }).eq('id', id);
 }
 
-// Initial load
-loadLeads();
-
+loadLeads()
 </script>
 
 </body>
