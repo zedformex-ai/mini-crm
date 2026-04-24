@@ -234,47 +234,39 @@ async function loadLeads() {
   const { data, error } = await client
     .from('leads')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(50); // 🚀 IMPORTANT
 
-  if (error) return alert(error.message);
+  if (error) {
+    console.error(error);
+    alert("Error loading leads: " + error.message);
+    return;
+  }
 
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
-  data.forEach(l => {
+  if (!data || data.length === 0) {
+    container.innerHTML = "<p>No leads found</p>";
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  data.forEach(lead => {
     const div = document.createElement('div');
     div.className = "lead";
 
     div.innerHTML = `
-      <div class="lead-header">
-        <div><b>${l.name}</b></div>
-        <div class="phone">${l.phone}</div>
-      </div>
+      <b>${lead.name || ''}</b><br>
+      📞 ${lead.phone || ''}<br>
+      Status: ${lead.status || 'new'}
+    `;
 
-      <button class="copy-btn" onclick="copy('${l.phone}')">Copy</button>
+    fragment.appendChild(div);
+  });
 
-      <br><br>
-
-      Status:
-      <select onchange="updateStatus('${l.id}', this.value)">
-        <option ${l.status==='new'?'selected':''}>new</option>
-        <option ${l.status==='contacted'?'selected':''}>contacted</option>
-        <option ${l.status==='followup'?'selected':''}>followup</option>
-        <option ${l.status==='closed'?'selected':''}>closed</option>
-      </select>
-
-      <br><br>
-
-      Notes:
-      <textarea onchange="updateComment('${l.id}', this.value)">${l.comment || ''}</textarea>
-
-```
-`;
-
-container.appendChild(div);
-```
-
-});
+  container.appendChild(fragment);
 }
 
 // UTIL
