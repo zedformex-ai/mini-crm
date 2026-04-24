@@ -1,25 +1,16 @@
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Mini CRM</title>
 
-<!-- Excel -->
-
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- Supabase -->
-
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   font-family: 'Inter', sans-serif;
@@ -54,23 +45,30 @@ body {
   margin-bottom: 12px;
 }
 
-input[type="file"] {
-  margin-top: 10px;
-}
-
 button {
   background: #4f46e5;
   color: white;
   border: none;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  transition: 0.2s;
 }
 
 button:hover {
   background: #4338ca;
+}
+
+input, select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.top-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .lead {
@@ -82,13 +80,8 @@ button:hover {
 }
 
 .lead:hover {
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-}
-
-.lead-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.06);
 }
 
 .phone {
@@ -103,12 +96,6 @@ textarea {
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   padding: 6px;
-}
-
-select {
-  margin-top: 6px;
-  border-radius: 6px;
-  padding: 4px;
 }
 
 .progress-container {
@@ -126,23 +113,19 @@ select {
   height: 10px;
   width: 0%;
   background: linear-gradient(90deg, #4f46e5, #22c55e);
-  transition: 0.3s;
 }
 
 .progress-text {
   font-size: 13px;
   margin-top: 4px;
-  color: #475569;
 }
 
-.copy-btn {
-  background: #10b981;
+.action-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
-
-.copy-btn:hover {
-  background: #059669;
-}
-
 </style>
 
 </head>
@@ -158,23 +141,34 @@ select {
       Upload Excel with <b>name</b> and <b>phone</b>
     </div>
 
-```
-<input type="file" id="fileInput">
-<button onclick="uploadExcel()">Upload Leads</button>
+    <input type="file" id="fileInput">
+    <button onclick="uploadExcel()">Upload Leads</button>
 
-<div id="progressBox" class="progress-container">
-  <div class="progress-bar-bg">
-    <div id="progressBar" class="progress-bar"></div>
-  </div>
-  <div id="progressText" class="progress-text">Uploading...</div>
-</div>
-```
-
+    <div id="progressBox" class="progress-container">
+      <div class="progress-bar-bg">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div id="progressText" class="progress-text">Uploading...</div>
+    </div>
   </div>
 
   <div class="card">
+
+    <div class="top-controls">
+      <input id="searchBox" placeholder="Search name or phone..." oninput="loadLeads()" style="flex:1;">
+      
+      <select id="statusFilter" onchange="loadLeads()">
+        <option value="">All</option>
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="followup">Follow Up</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+
     <h3>📞 Leads</h3>
     <div id="leads"></div>
+
   </div>
 
 </div>
@@ -206,7 +200,7 @@ async function uploadExcel() {
   const rows = json.map(r => ({
     name: r.name || r.Name || "",
     phone: (r.phone || r.Phone || "").toString()
-  }));
+  })).filter(r => r.name && r.phone);
 
   let uploaded = 0;
   const chunkSize = 50;
@@ -225,61 +219,84 @@ async function uploadExcel() {
   }
 
   progressText.innerText = "Done!";
-  loadLeads();
+  await loadLeads();
 }
 
 
 // LOAD
 async function loadLeads() {
+
+  const search = document.getElementById("searchBox")?.value?.toLowerCase() || "";
+  const statusFilter = document.getElementById("statusFilter")?.value;
+
   const { data, error } = await client
     .from('leads')
     .select('*')
-    .order('created_at', { ascending: false })
-    .limit(50); // 🚀 IMPORTANT
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error(error);
-    alert("Error loading leads: " + error.message);
+    alert(error.message);
     return;
   }
+
+  const filtered = data.filter(l => {
+    const matchSearch =
+      (l.name || "").toLowerCase().includes(search) ||
+      (l.phone || "").includes(search);
+
+    const matchStatus = statusFilter ? l.status === statusFilter : true;
+
+    return matchSearch && matchStatus;
+  });
 
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    container.innerHTML = "<p>No leads found</p>";
-    return;
-  }
-
-  const fragment = document.createDocumentFragment();
-
-  data.forEach(lead => {
+  filtered.forEach(lead => {
     const div = document.createElement('div');
     div.className = "lead";
 
     div.innerHTML = `
-      <b>${lead.name || ''}</b><br>
-      📞 ${lead.phone || ''}<br>
-      Status: ${lead.status || 'new'}
+      <b>${lead.name}</b><br>
+      <span class="phone">📞 ${lead.phone}</span><br><br>
+
+      Status:
+      <select onchange="updateStatus('${lead.id}', this.value)">
+        <option ${lead.status==='new'?'selected':''}>new</option>
+        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+        <option ${lead.status==='followup'?'selected':''}>followup</option>
+        <option ${lead.status==='closed'?'selected':''}>closed</option>
+      </select>
+
+      <br><br>
+
+      Comment:
+      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ""}</textarea>
+
+      <div class="action-row">
+        <button onclick="copy('${lead.phone}')">📋 Copy</button>
+        <button onclick="updateStatus('${lead.id}','contacted')">✅ Contacted</button>
+        <button onclick="updateStatus('${lead.id}','closed')">✔ Close</button>
+      </div>
     `;
 
-    fragment.appendChild(div);
+    container.appendChild(div);
   });
-
-  container.appendChild(fragment);
 }
+
 
 // UTIL
 function copy(text) {
-navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(text);
 }
 
 async function updateStatus(id, status) {
-await client.from('leads').update({ status }).eq('id', id);
+  await client.from('leads').update({ status }).eq('id', id);
+  loadLeads();
 }
 
 async function updateComment(id, comment) {
-await client.from('leads').update({ comment }).eq('id', id);
+  await client.from('leads').update({ comment }).eq('id', id);
 }
 
 loadLeads();
