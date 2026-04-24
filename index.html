@@ -12,11 +12,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-
 :root {
-  --primary: #1f5f99;   /* 🔵 logo blue */
+  --primary: #1f5f99;
   --primary-dark: #174a77;
-  --accent: #3b82f6;
   --bg: #f4f8fc;
 }
 
@@ -26,17 +24,13 @@ body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
   margin: 0;
-  color: #1e293b;
 }
 
 /* HEADER */
 .header {
   background: var(--primary);
   padding: 14px 20px;
-  display: flex;
-  align-items: center;
 }
-
 .header img {
   height: 36px;
 }
@@ -90,20 +84,16 @@ button:hover {
   padding: 14px;
   border-radius: 10px;
   margin-top: 10px;
-  background: #fff;
 }
 
 .lead-name {
   font-weight: 600;
-  font-size: 15px;
 }
 
 .phone {
   color: var(--primary);
-  margin-top: 4px;
 }
 
-/* ACTIONS */
 .actions {
   margin-top: 10px;
   display: flex;
@@ -113,7 +103,7 @@ button:hover {
 
 textarea {
   width: 100%;
-  margin-top: 8px;
+  margin-top: 6px;
   border-radius: 8px;
   padding: 8px;
   border: 1px solid #e2e8f0;
@@ -136,44 +126,24 @@ textarea {
   background: linear-gradient(90deg, var(--primary), #22c55e);
 }
 
-/* 📱 MOBILE OPTIMIZATION */
+/* MOBILE */
 @media (max-width: 600px) {
-
-  .controls {
-    flex-direction: column;
-  }
-
-  input, select, button {
-    width: 100%;
-    font-size: 16px;
-  }
-
-  .lead {
-    padding: 16px;
-  }
-
-  .lead-name {
-    font-size: 16px;
-  }
-
+  .controls { flex-direction: column; }
+  input, select, button { width: 100%; font-size: 16px; }
 }
-
 </style>
-
 </head>
 
 <body>
 
-<!-- HEADER WITH YOUR LOGO -->
 <div class="header">
- <img src="logo.png">
+  <img src="logo.png">
 </div>
 
 <div class="container">
 
   <!-- UPLOAD -->
   <div class="card">
-
     <div class="controls">
       <input type="file" id="fileInput">
       <button onclick="uploadExcel()">Upload Leads</button>
@@ -185,15 +155,13 @@ textarea {
       </div>
       <div id="progressText">Uploading...</div>
     </div>
-
   </div>
 
-  <!-- FILTERS -->
+  <!-- FILTER -->
   <div class="card">
-
     <div class="controls">
       <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
-      
+
       <select id="statusFilter" onchange="loadLeads()">
         <option value="">All</option>
         <option value="new">New</option>
@@ -202,7 +170,6 @@ textarea {
         <option value="closed">Closed</option>
       </select>
     </div>
-
   </div>
 
   <!-- LEADS -->
@@ -214,66 +181,68 @@ textarea {
 
 <script>
 
-const SUPABASE_URL = "https://vdyelzvodduuzmmlocnp.supabase.co";
-const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
+const client = supabase.createClient(
+  "https://vdyelzvodduuzmmlocnp.supabase.co",
+  "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
+);
 
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-
-// UPLOAD
+// 🔥 FIXED UPLOAD
 async function uploadExcel() {
-
   const file = document.getElementById('fileInput').files[0];
-  if (!file) return alert("Select file");
+  if (!file) return alert("Select a file");
 
   const progressBox = document.getElementById('progressBox');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
 
   progressBox.style.display = "block";
+  progressBar.style.width = "0%";
+  progressText.innerText = "Reading file...";
 
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet);
 
- const rows = json.map(r => ({
-  name: r.name || r.Name || "",
-  phone: (r.phone || r.Phone || "").toString(),
-  email: r.email || "",
-  website: r.website || "",
-  owner_name: r.owner_name || ""
-}));filter(r => r.name && r.phone);
+  const rows = json.map(r => ({
+    name: r.name || r.Name || "",
+    phone: (r.phone || r.Phone || "").toString(),
+    email: r.email || "",
+    website: r.website || "",
+    owner_name: r.owner_name || ""
+  }));
 
   let uploaded = 0;
+  const chunkSize = 20;
 
-for (let row of rows) {
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
 
-  // check if already exists
-  const { data: existing } = await client
-    .from('leads')
-    .select('id')
-    .eq('phone', row.phone)
-    .limit(1);
+    const { error } = await client.from('leads').insert(chunk);
 
-  if (existing.length === 0) {
-    await client.from('leads').insert(row);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    uploaded += chunk.length;
+    const percent = Math.round((uploaded / rows.length) * 100);
+    progressBar.style.width = percent + "%";
+    progressText.innerText = `Uploading ${percent}%`;
   }
 
-}
-
-  progressText.innerText = "Done";
+  progressText.innerText = "Done ✅";
   loadLeads();
 }
 
 
 // LOAD
 async function loadLeads() {
-
   const search = document.getElementById("searchBox").value.toLowerCase();
   const status = document.getElementById("statusFilter").value;
 
-  const { data } = await client.from('leads').select('*');
+  const { data } = await client.from('leads').select('*').limit(100);
 
   const filtered = data.filter(l => {
     const matchSearch =
@@ -289,43 +258,37 @@ async function loadLeads() {
   container.innerHTML = "";
 
   filtered.forEach(lead => {
-
     const div = document.createElement('div');
     div.className = "lead";
 
-   div.innerHTML = `
-  <div class="lead-header">
-    <b>${lead.name || ''}</b>
-    <button class="copy-btn" onclick="copy('${lead.phone}')">Copy</button>
-  </div>
+    div.innerHTML = `
+      <div class="lead-name">${lead.name || ''}</div>
+      <div class="phone">📞 ${lead.phone || ''}</div>
+      <div>✉️ ${lead.email || 'No email'}</div>
 
-  📞 ${lead.phone || ''}<br>
-  ✉️ ${lead.email || 'No email'}<br>
+      <div class="actions">
+        <button onclick="copy('${lead.phone}')">Copy</button>
+        <button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>
+      </div>
 
-  <button onclick="sendEmail('${lead.email}', '${lead.name}')">
-    Send Email
-  </button>
+      <br>
 
-  <br><br>
+      Status:
+      <select onchange="updateStatus('${lead.id}', this.value)">
+        <option ${lead.status==='new'?'selected':''}>new</option>
+        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+        <option ${lead.status==='followup'?'selected':''}>followup</option>
+        <option ${lead.status==='closed'?'selected':''}>closed</option>
+      </select>
 
-  Status:
-  <select onchange="updateStatus('${lead.id}', this.value)">
-    <option ${lead.status==='new'?'selected':''}>new</option>
-    <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-    <option ${lead.status==='followup'?'selected':''}>followup</option>
-    <option ${lead.status==='closed'?'selected':''}>closed</option>
-  </select>
+      <br><br>
 
-  <br><br>
+      Comment:
+      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
+    `;
 
-  Comment:
-  <textarea onchange="updateComment('${lead.id}', this.value)">
-    ${lead.comment || ''}
-  </textarea>
-`;
     container.appendChild(div);
   });
-
 }
 
 
@@ -336,29 +299,28 @@ function copy(text) {
 
 async function updateStatus(id, status) {
   await client.from('leads').update({ status }).eq('id', id);
-  loadLeads();
 }
-window.sendEmail = function(email, name) {
+
+async function updateComment(id, comment) {
+  await client.from('leads').update({ comment }).eq('id', id);
+}
+
+function sendEmail(email, name) {
   if (!email) return alert("No email available");
 
   const subject = encodeURIComponent("Quick follow-up");
   const body = encodeURIComponent(
-    `Hi ${name || ""},
+`Hi ${name || ""},
 
 Great speaking with you.
 
 Here’s a Google Meet link:
 https://meet.google.com/new
 
-Let’s connect.
-
 Regards`
   );
 
   window.open(`mailto:${email}?subject=${subject}&body=${body}`);
-}
-async function updateComment(id, comment) {
-  await client.from('leads').update({ comment }).eq('id', id);
 }
 
 loadLeads();
