@@ -14,11 +14,10 @@
 
 :root {
   --primary:#1f5f99;
-  --primary-dark:#174a77;
   --bg:#f4f8fc;
 }
 
-body { font-family:Inter; margin:0; background:var(--bg); }
+body { margin:0; font-family:Inter; background:var(--bg); }
 
 /* LOGIN */
 #loginScreen {
@@ -30,31 +29,49 @@ body { font-family:Inter; margin:0; background:var(--bg); }
 .login-card {
   background:#eef8eb;
   padding:30px;
-  border-radius:18px;
-  width:90%; max-width:360px;
-  display:flex; flex-direction:column; align-items:center; gap:14px;
+  border-radius:16px;
+  width:300px;
+  display:flex; flex-direction:column; gap:12px;
 }
 
-.login-card input, .login-card button {
-  width:100%; max-width:280px;
-  padding:12px; border-radius:10px;
-}
-
-.login-card button {
-  background:var(--primary); color:white; border:none;
-}
-
-/* APP */
-.header {
-  background:var(--primary);
-  padding:14px;
+/* APP LAYOUT */
+.app {
   display:flex;
+  height:100vh;
 }
 
-.header img { height:34px; }
+/* SIDEBAR */
+.sidebar {
+  width:260px;
+  background:#1f5f99;
+  color:white;
+  padding:20px;
+}
 
-.container { max-width:900px; margin:auto; padding:15px; }
+.sidebar h3 { margin-top:0; }
 
+.sidebar select, .sidebar button {
+  width:100%;
+  margin-top:10px;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+}
+
+.sidebar button {
+  background:white;
+  color:#1f5f99;
+  font-weight:600;
+}
+
+/* MAIN */
+.main {
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
+
+/* CARD */
 .card {
   background:white;
   padding:16px;
@@ -62,46 +79,37 @@ body { font-family:Inter; margin:0; background:var(--bg); }
   margin-bottom:14px;
 }
 
-/* BUTTON GRID */
-.grid {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-
-.grid button {
-  padding:12px;
-  background:var(--primary);
-  color:white;
-  border:none;
-  border-radius:10px;
-}
-
 /* LEADS */
 .lead {
   border:1px solid #e2e8f0;
-  padding:14px;
+  padding:12px;
   border-radius:10px;
   margin-top:10px;
 }
 
-textarea, input, select {
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  border-radius:8px;
-  border:1px solid #e2e8f0;
-}
-
 .actions {
-  margin-top:10px;
   display:flex;
   gap:6px;
   flex-wrap:wrap;
+  margin-top:8px;
 }
 
-.progress-container { display:none; margin-top:10px; }
-.progress-bar { height:8px; width:0%; background:linear-gradient(90deg,var(--primary),#22c55e); }
+button {
+  background:#1f5f99;
+  color:white;
+  border:none;
+  padding:6px 10px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+input, select, textarea {
+  width:100%;
+  margin-top:6px;
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
 
 </style>
 </head>
@@ -111,7 +119,6 @@ textarea, input, select {
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <img src="logo2.png" width="100">
     <h2>Login</h2>
     <input id="email" placeholder="Email">
     <input id="password" type="password" placeholder="Password">
@@ -120,63 +127,51 @@ textarea, input, select {
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;">
+<div id="app" style="display:none;" class="app">
 
-<div class="header">
-  <img src="logo.png">
-  <button onclick="logout()" style="margin-left:auto;">Logout</button>
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h3>CRM</h3>
+
+  <select id="locationSelect">
+    <option value="">Location</option>
+    <option>Mumbai</option>
+    <option>Delhi</option>
+    <option>Bangalore</option>
+    <option>New York</option>
+  </select>
+
+  <select id="businessSelect">
+    <option value="">Business</option>
+    <option>Chiropractor</option>
+    <option>Dentist</option>
+    <option>Gym</option>
+    <option>Real Estate</option>
+  </select>
+
+  <button onclick="initCRM()">Load</button>
+
+  <button onclick="logout()">Logout</button>
 </div>
 
-<div class="container">
+<!-- MAIN -->
+<div class="main">
 
-<!-- LOCATION -->
-<div class="card" id="locationStep">
-  <h3>Select Location</h3>
-  <div class="grid">
-    <button onclick="selectLocation('Mumbai')">Mumbai</button>
-    <button onclick="selectLocation('Delhi')">Delhi</button>
-  </div>
-</div>
-
-<!-- BUSINESS -->
-<div class="card" id="businessStep" style="display:none;">
-  <h3>Select Business Type</h3>
-  <div class="grid">
-    <button onclick="selectBusiness('Chiropractor')">Chiropractor</button>
-    <button onclick="selectBusiness('Dentist')">Dentist</button>
-  </div>
-</div>
-
-<!-- CRM -->
 <div id="crmSection" style="display:none;">
 
 <div class="card">
   <input type="file" id="fileInput">
   <button onclick="uploadExcel()">Upload Leads</button>
-
-  <div class="progress-container" id="progressBox">
-    <div id="progressBar" class="progress-bar"></div>
-    <div id="progressText">Uploading...</div>
-  </div>
 </div>
 
 <div class="card">
   <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
 
   <select id="statusFilter" onchange="loadLeads()">
-    <option value="">All</option>
-    <option value="new">New</option>
-    <option value="contacted">Contacted</option>
-    <option value="followup">Follow Up</option>
-    <option value="closed">Closed</option>
-  </select>
-
-  <select id="leadTypeFilter" onchange="loadLeads()">
-    <option value="">All Types</option>
-    <option>Cold lead</option>
-    <option>Showed Interest</option>
-    <option>Hot lead</option>
-    <option>Not interested</option>
+    <option value="">All Status</option>
+    <option>new</option>
+    <option>contacted</option>
+    <option>closed</option>
   </select>
 </div>
 
@@ -185,6 +180,7 @@ textarea, input, select {
 </div>
 
 </div>
+
 </div>
 </div>
 
@@ -211,17 +207,20 @@ async function checkUser(){
   const {data}=await client.auth.getUser();
   if(data.user){
     loginScreen.style.display="none";
-    app.style.display="block";
+    app.style.display="flex";
   }
 }
 
-// NAV
-function selectLocation(loc){
+// INIT
+function initCRM(){
+  const loc=locationSelect.value;
+  const biz=businessSelect.value;
+
+  if(!loc||!biz) return alert("Select both");
+
   selectedLocation=loc;
-  businessStep.style.display="block";
-}
-function selectBusiness(type){
-  selectedBusiness=type;
+  selectedBusiness=biz;
+
   crmSection.style.display="block";
   loadLeads();
 }
@@ -231,8 +230,6 @@ async function uploadExcel(){
   const file=fileInput.files[0];
   if(!file) return alert("Select file");
 
-  progressBox.style.display="block";
-
   const wb=XLSX.read(await file.arrayBuffer());
   const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
@@ -240,21 +237,12 @@ async function uploadExcel(){
     name:r.name||"",
     phone:(r.phone||"").toString(),
     email:r.email||"",
-    website:r.website||"",
     location:selectedLocation,
     business_type:selectedBusiness
   }));
 
-  for(let i=0;i<rows.length;i+=20){
-    const chunk=rows.slice(i,i+20);
-    const {error}=await client.from('leads')
-      .upsert(chunk,{onConflict:'phone'});
-    if(error) return alert(error.message);
+  await client.from('leads').upsert(rows,{onConflict:'phone'});
 
-    progressBar.style.width=((i+20)/rows.length*100)+"%";
-  }
-
-  progressText.innerText="Done";
   loadLeads();
 }
 
@@ -263,8 +251,7 @@ async function loadLeads(){
   const {data}=await client.from('leads')
     .select('*')
     .eq('location',selectedLocation)
-    .eq('business_type',selectedBusiness)
-    .limit(100);
+    .eq('business_type',selectedBusiness);
 
   leads.innerHTML="";
 
@@ -278,8 +265,9 @@ async function loadLeads(){
       ✉️ ${l.email||'No email'}<br>
 
       <div class="actions">
-        <button onclick="copy('${l.phone}')">Phone</button>
-        ${l.email?`<button onclick="copy('${l.email}')">Email</button>`:''}
+        <button onclick="copy('${l.phone}')">Copy Phone</button>
+        ${l.email?`<button onclick="copy('${l.email}')">Copy Email</button>`:''}
+        ${l.email?`<button onclick="sendEmail('${l.email}','${l.name}')">Email</button>`:''}
       </div>
 
       Status:
@@ -301,9 +289,14 @@ async function loadLeads(){
 
 // UTIL
 function copy(t){navigator.clipboard.writeText(t);}
+function sendEmail(email,name){
+  window.open(`mailto:${email}?subject=Follow up&body=Hi ${name}`);
+}
+
 async function updateStatus(id,status){
   await client.from('leads').update({status}).eq('id',id);
 }
+
 async function updateComment(id,comment){
   await client.from('leads').update({comment}).eq('id',id);
 }
