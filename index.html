@@ -264,12 +264,18 @@ async function loadLeads() {
     div.innerHTML = `
       <div class="lead-name">${lead.name || ''}</div>
       <div class="phone">📞 ${lead.phone || ''}</div>
-      <div>✉️ ${lead.email || 'No email'}</div>
+      <div>
+  ✉️ ${lead.email || 'No email'}
+</div>
 
-      <div class="actions">
-        <button onclick="copy('${lead.phone}')">Copy</button>
-        <button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>
-      </div>
+<div class="actions">
+  <button onclick="copy('${lead.phone}')">Copy Phone</button>
+
+  ${lead.email ? `
+    <button onclick="copy('${lead.email}')">Copy Email</button>
+    <button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>
+  ` : ''}
+</div>
 
       <br>
 
@@ -295,6 +301,7 @@ async function loadLeads() {
 // UTIL
 function copy(text) {
   navigator.clipboard.writeText(text);
+  alert("Copied!");
 }
 
 async function updateStatus(id, status) {
