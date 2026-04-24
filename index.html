@@ -238,9 +238,12 @@ async function uploadExcel() {
   const json = XLSX.utils.sheet_to_json(sheet);
 
   const rows = json.map(r => ({
-    name: r.name || r.Name || "",
-    phone: (r.phone || r.Phone || "").toString()
-  })).filter(r => r.name && r.phone);
+  name: r.name || "",
+  phone: (r.phone || "").toString(),
+  email: r.email || "",
+  website: r.website || "",
+  owner_name: r.owner_name || ""
+}));filter(r => r.name && r.phone);
 
   let uploaded = 0;
 
