@@ -85,10 +85,10 @@ select {
       John Doe | 9876543210
     </p>
 
-```
+
 <input type="file" id="fileInput">
 <button onclick="uploadExcel()">Upload Leads</button>
-```
+
 
   </div>
 
@@ -110,18 +110,29 @@ async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select a file");
 
+  alert("Uploading... please wait");
+
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet);
 
-  for (let row of json) {
-    await client.from('leads').insert({
-      name: row.name || row.Name,
-      phone: row.phone || row.Phone
-    });
+  const rows = json.map(row => ({
+    name: row.name || row.Name || "",
+    phone: (row.phone || row.Phone || "").toString()
+  }));
+
+  const { error } = await client.from('leads').insert(rows);
+
+  if (error) {
+    console.error(error);
+    alert("Upload failed: " + error.message);
+    return;
   }
 
+  alert("Upload complete!");
+  loadLeads();
+}
   loadLeads();
 }
 
