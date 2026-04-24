@@ -114,7 +114,9 @@ async function uploadExcel() {
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
 
-  progressBox.style.display = "block";
+if (progressBox) progressBox.style.display = "block";
+if (progressBar) progressBar.style.width = "0%";
+if (progressText) progressText.innerText = "Preparing data...";
   progressBar.style.width = "0%";
   progressText.innerText = "Preparing data...";
 
