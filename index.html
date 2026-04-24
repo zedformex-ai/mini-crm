@@ -11,48 +11,45 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-  /* LOGIN FULL SCREEN */
+
+/* ================= LOGIN ================= */
+
 #loginScreen {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: #1f5f99; /* your logo blue */
+  background: #1f5f99;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
 }
 
-/* LOGIN CARD */
 .login-card {
-  background: white;
-  padding: 30px 24px;
-  border-radius: 16px;
+  background: #cfd6cc;
+  padding: 32px 24px;
+  border-radius: 18px;
   width: 90%;
-  max-width: 350px;
+  max-width: 360px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
 }
 
-/* LOGO */
 .login-logo {
   width: 120px;
   margin-bottom: 20px;
 }
 
-/* INPUTS */
 .login-card input {
   width: 100%;
   margin-top: 12px;
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  font-size: 14px;
+  background: white;
 }
 
-/* BUTTON */
 .login-card button {
   width: 100%;
   margin-top: 16px;
@@ -60,7 +57,7 @@
   background: #1f5f99;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -69,28 +66,18 @@
   background: #174a77;
 }
 
-/* MOBILE */
-@media (max-width: 600px) {
-  .login-card {
-    padding: 24px 16px;
-  }
+/* ================= APP ================= */
 
-  .login-logo {
-    width: 100px;
-  }
-}
 :root {
   --primary: #1f5f99;
   --primary-dark: #174a77;
   --bg: #f4f8fc;
 }
 
-* { box-sizing: border-box; }
-
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--bg);
   margin: 0;
+  background: var(--bg);
 }
 
 /* HEADER */
@@ -105,7 +92,6 @@ body {
   height: 36px;
 }
 
-/* LAYOUT */
 .container {
   max-width: 900px;
   margin: auto;
@@ -120,14 +106,12 @@ body {
   margin-bottom: 16px;
 }
 
-/* INPUTS */
 input, select {
+  width: 100%;
   padding: 10px;
+  margin-bottom: 8px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  font-size: 14px;
-  width: 100%;
-  margin-bottom: 8px;
 }
 
 button {
@@ -161,8 +145,8 @@ button:hover {
 textarea {
   width: 100%;
   margin-top: 6px;
-  border-radius: 8px;
   padding: 8px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
@@ -187,27 +171,23 @@ textarea {
 @media (max-width: 600px) {
   .container { padding: 10px; }
 }
+
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen">
-
   <div class="login-card">
-
     <img src="logo2.png" class="login-logo">
-
     <h2>Login</h2>
 
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
 
     <button onclick="login()">Login</button>
-
   </div>
-
 </div>
 
 <!-- APP -->
@@ -262,26 +242,16 @@ const client = supabase.createClient(
   "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
 );
 
-
-// AUTH
+// LOGIN
 async function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
 
   const { error } = await client.auth.signInWithPassword({ email, password });
+
   if (error) return alert(error.message);
 
   checkUser();
-}
-
-async function signup() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-
-  const { error } = await client.auth.signUp({ email, password });
-  if (error) return alert(error.message);
-
-  alert("Signup done. Now login.");
 }
 
 async function logout() {
@@ -293,17 +263,16 @@ async function checkUser() {
   const { data } = await client.auth.getUser();
 
   if (data.user) {
-    document.getElementById('authBox').style.display = "none";
+    document.getElementById('loginScreen').style.display = "none";
     document.getElementById('app').style.display = "block";
     loadLeads();
   } else {
-    document.getElementById('authBox').style.display = "block";
+    document.getElementById('loginScreen').style.display = "flex";
     document.getElementById('app').style.display = "none";
   }
 }
 
-
-// UPLOAD (fixed)
+// UPLOAD
 async function uploadExcel() {
   const file = document.getElementById('fileInput').files[0];
   if (!file) return alert("Select file");
@@ -328,13 +297,11 @@ async function uploadExcel() {
   }));
 
   let uploaded = 0;
-  const chunkSize = 20;
 
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
+  for (let i = 0; i < rows.length; i += 20) {
+    const chunk = rows.slice(i, i + 20);
 
-    const { error } = await client
-      .from('leads')
+    const { error } = await client.from('leads')
       .upsert(chunk, { onConflict: 'phone' });
 
     if (error) return alert(error.message);
@@ -349,7 +316,6 @@ async function uploadExcel() {
   loadLeads();
 }
 
-
 // LOAD
 async function loadLeads() {
   const search = document.getElementById("searchBox").value.toLowerCase();
@@ -357,51 +323,49 @@ async function loadLeads() {
 
   const { data } = await client.from('leads').select('*').limit(100);
 
-  const filtered = data.filter(l => {
-    return (
-      (l.name || "").toLowerCase().includes(search) ||
-      (l.phone || "").includes(search)
-    ) && (!status || l.status === status);
-  });
-
   const container = document.getElementById('leads');
   container.innerHTML = "";
 
-  filtered.forEach(lead => {
-    const div = document.createElement('div');
-    div.className = "lead";
+  data
+    .filter(l =>
+      ((l.name || "").toLowerCase().includes(search) ||
+       (l.phone || "").includes(search)) &&
+      (!status || l.status === status)
+    )
+    .forEach(lead => {
+      const div = document.createElement('div');
+      div.className = "lead";
 
-    div.innerHTML = `
-      <b>${lead.name || ''}</b><br>
-      📞 ${lead.phone || ''}<br>
-      ✉️ ${lead.email || 'No email'}<br>
+      div.innerHTML = `
+        <b>${lead.name || ''}</b><br>
+        📞 ${lead.phone || ''}<br>
+        ✉️ ${lead.email || 'No email'}<br>
 
-      <div class="actions">
-        <button onclick="copy('${lead.phone}')">Copy Phone</button>
-        ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
-        ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
-      </div>
+        <div class="actions">
+          <button onclick="copy('${lead.phone}')">Copy Phone</button>
+          ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
+          ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
+        </div>
 
-      <br>
+        <br>
 
-      Status:
-      <select onchange="updateStatus('${lead.id}', this.value)">
-        <option ${lead.status==='new'?'selected':''}>new</option>
-        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-        <option ${lead.status==='followup'?'selected':''}>followup</option>
-        <option ${lead.status==='closed'?'selected':''}>closed</option>
-      </select>
+        Status:
+        <select onchange="updateStatus('${lead.id}', this.value)">
+          <option ${lead.status==='new'?'selected':''}>new</option>
+          <option ${lead.status==='contacted'?'selected':''}>contacted</option>
+          <option ${lead.status==='followup'?'selected':''}>followup</option>
+          <option ${lead.status==='closed'?'selected':''}>closed</option>
+        </select>
 
-      <br><br>
+        <br><br>
 
-      Comment:
-      <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
-    `;
+        Comment:
+        <textarea onchange="updateComment('${lead.id}', this.value)">${lead.comment || ''}</textarea>
+      `;
 
-    container.appendChild(div);
-  });
+      container.appendChild(div);
+    });
 }
-
 
 // UTIL
 function copy(text) {
@@ -425,7 +389,6 @@ https://meet.google.com/new`);
 
   window.open(`mailto:${email}?subject=${subject}&body=${body}`);
 }
-
 
 checkUser();
 
