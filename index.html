@@ -155,6 +155,12 @@ async function uploadExcel() {
 
   loadLeads();
 }
+<div id="progressBox" style="margin-top:10px; display:none;">
+  <div style="background:#ddd; border-radius:6px; overflow:hidden;">
+    <div id="progressBar" style="height:10px; width:0%; background:#28a745;"></div>
+  </div>
+  <p id="progressText" style="font-size:13px; margin-top:5px;">Uploading...</p>
+</div>
 // Load leads
 async function loadLeads() {
   const { data, error } = await client
