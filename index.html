@@ -237,9 +237,9 @@ async function uploadExcel() {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const json = XLSX.utils.sheet_to_json(sheet);
 
-  const rows = json.map(r => ({
-  name: r.name || "",
-  phone: (r.phone || "").toString(),
+ const rows = json.map(r => ({
+  name: r.name || r.Name || "",
+  phone: (r.phone || r.Phone || "").toString(),
   email: r.email || "",
   website: r.website || "",
   owner_name: r.owner_name || ""
@@ -247,17 +247,20 @@ async function uploadExcel() {
 
   let uploaded = 0;
 
-  for (let row of rows) {
+for (let row of rows) {
 
-    const { error } = await client.from('leads').insert(row);
-    if (error) return alert(error.message);
+  // check if already exists
+  const { data: existing } = await client
+    .from('leads')
+    .select('id')
+    .eq('phone', row.phone)
+    .limit(1);
 
-    uploaded++;
-
-    const percent = Math.round((uploaded / rows.length) * 100);
-    progressBar.style.width = percent + "%";
-    progressText.innerText = percent + "%";
+  if (existing.length === 0) {
+    await client.from('leads').insert(row);
   }
+
+}
 
   progressText.innerText = "Done";
   loadLeads();
