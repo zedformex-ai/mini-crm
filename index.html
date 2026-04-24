@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard - Zedformex</title>
+<title>Zedformex CRM</title>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -12,183 +12,96 @@
 
 <style>
 
-/* ================= LOGIN ================= */
+:root {
+  --primary:#1f5f99;
+  --primary-dark:#174a77;
+  --bg:#f4f8fc;
+}
 
+body { font-family:Inter; margin:0; background:var(--bg); }
+
+/* LOGIN */
 #loginScreen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: #1f5f99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position:fixed; inset:0;
+  background:#1f5f99;
+  display:flex; align-items:center; justify-content:center;
 }
 
 .login-card {
-  background: #eef8eb;
-  padding: 36px 28px;
-  border-radius: 18px;
-  width: 90%;
-  max-width: 360px;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;   /* 🔥 THIS fixes alignment */
-  gap: 16px;
-}
-.login-logo {
-  width: 110px;
-  display: block;
-  margin: 0 auto 10px;   /* 🔥 centers it properly */
+  background:#eef8eb;
+  padding:30px;
+  border-radius:18px;
+  width:90%; max-width:360px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
 }
 
-.login-card input {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  font-size: 14px;
-  outline: none;
+.login-card input, .login-card button {
+  width:100%; max-width:280px;
+  padding:12px; border-radius:10px;
 }
-.login-card input,
+
 .login-card button {
-  width: 100%;
-  max-width: 280px;   /* 🔥 prevents stretching */
-}
-.login-card input:focus {
-  border-color: #1f5f99;
-}
-.login-card h2 {
-  margin: 10px 0 4px;
-}
-.login-card button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  background: #1f5f99;
-  color: white;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  margin-top: 6px;
+  background:var(--primary); color:white; border:none;
 }
 
-.login-card button:hover {
-  background: #174a77;
-}
-
-/* ================= APP ================= */
-
-:root {
-  --primary: #1f5f99;
-  --primary-dark: #174a77;
-  --bg: #f4f8fc;
-}
-
-body {
-  font-family: 'Inter', sans-serif;
-  margin: 0;
-  background: var(--bg);
-}
-
-/* HEADER */
+/* APP */
 .header {
-  background: var(--primary);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
+  background:var(--primary);
+  padding:14px;
+  display:flex;
 }
 
-.header img {
-  height: 36px;
-}
+.header img { height:34px; }
 
-.container {
-  max-width: 900px;
-  margin: auto;
-  padding: 15px;
-}
+.container { max-width:900px; margin:auto; padding:15px; }
 
 .card {
-  background: white;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-  margin-bottom: 16px;
+  background:white;
+  padding:16px;
+  border-radius:12px;
+  margin-bottom:14px;
 }
 
-input, select {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+/* BUTTON GRID */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
 }
 
-button {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: var(--primary-dark);
+.grid button {
+  padding:12px;
+  background:var(--primary);
+  color:white;
+  border:none;
+  border-radius:10px;
 }
 
 /* LEADS */
 .lead {
-  border: 1px solid #e2e8f0;
-  padding: 14px;
-  border-radius: 10px;
-  margin-top: 10px;
+  border:1px solid #e2e8f0;
+  padding:14px;
+  border-radius:10px;
+  margin-top:10px;
+}
+
+textarea, input, select {
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #e2e8f0;
 }
 
 .actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  margin-top:10px;
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
 }
 
-textarea {
-  width: 100%;
-  margin-top: 6px;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-.followup-today {
-  border: 2px solid #ef4444;
-  background: #fff5f5;
-}
-/* PROGRESS */
-.progress-container {
-  margin-top: 10px;
-  display: none;
-}
-
-.progress-bar-bg {
-  background: #e5e7eb;
-  border-radius: 10px;
-}
-
-.progress-bar {
-  height: 8px;
-  width: 0%;
-  background: linear-gradient(90deg, var(--primary), #22c55e);
-}
-
-/* MOBILE */
-@media (max-width: 600px) {
-  .container { padding: 10px; }
-}
+.progress-container { display:none; margin-top:10px; }
+.progress-bar { height:8px; width:0%; background:linear-gradient(90deg,var(--primary),#22c55e); }
 
 </style>
 </head>
@@ -198,12 +111,10 @@ textarea {
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <img src="logo2.png" class="login-logo">
+    <img src="logo2.png" width="100">
     <h2>Login</h2>
-
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 </div>
@@ -211,53 +122,70 @@ textarea {
 <!-- APP -->
 <div id="app" style="display:none;">
 
-  <div class="header">
-    <img src="logo.png">
-    <button onclick="logout()" style="margin-left:auto;">Logout</button>
+<div class="header">
+  <img src="logo.png">
+  <button onclick="logout()" style="margin-left:auto;">Logout</button>
+</div>
+
+<div class="container">
+
+<!-- LOCATION -->
+<div class="card" id="locationStep">
+  <h3>Select Location</h3>
+  <div class="grid">
+    <button onclick="selectLocation('Mumbai')">Mumbai</button>
+    <button onclick="selectLocation('Delhi')">Delhi</button>
   </div>
+</div>
 
-  <div class="container">
-
-    <!-- UPLOAD -->
-    <div class="card">
-      <input type="file" id="fileInput">
-      <button onclick="uploadExcel()">Upload Leads</button>
-
-      <div id="progressBox" class="progress-container">
-        <div class="progress-bar-bg">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-        <div id="progressText">Uploading...</div>
-      </div>
-    </div>
-
-    <!-- FILTER -->
-    <div class="card">
-      <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
-
-      <select id="statusFilter" onchange="loadLeads()">
-        <option value="">All</option>
-        <option value="new">New</option>
-        <option value="contacted">Contacted</option>
-        <option value="followup">Follow Up</option>
-        <option value="closed">Closed</option>
-      </select>
-      <select id="leadTypeFilter" onchange="loadLeads()">
-  <option value="">All Types</option>
-  <option value="Cold lead">Cold lead</option>
-  <option value="Showed Interest">Showed Interest</option>
-  <option value="Hot lead">Hot lead</option>
-  <option value="Not interested">Not interested</option>
-</select>
-    </div>
-
-    <!-- LEADS -->
-    <div class="card">
-      <div id="leads"></div>
-    </div>
-
+<!-- BUSINESS -->
+<div class="card" id="businessStep" style="display:none;">
+  <h3>Select Business Type</h3>
+  <div class="grid">
+    <button onclick="selectBusiness('Chiropractor')">Chiropractor</button>
+    <button onclick="selectBusiness('Dentist')">Dentist</button>
   </div>
+</div>
 
+<!-- CRM -->
+<div id="crmSection" style="display:none;">
+
+<div class="card">
+  <input type="file" id="fileInput">
+  <button onclick="uploadExcel()">Upload Leads</button>
+
+  <div class="progress-container" id="progressBox">
+    <div id="progressBar" class="progress-bar"></div>
+    <div id="progressText">Uploading...</div>
+  </div>
+</div>
+
+<div class="card">
+  <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
+
+  <select id="statusFilter" onchange="loadLeads()">
+    <option value="">All</option>
+    <option value="new">New</option>
+    <option value="contacted">Contacted</option>
+    <option value="followup">Follow Up</option>
+    <option value="closed">Closed</option>
+  </select>
+
+  <select id="leadTypeFilter" onchange="loadLeads()">
+    <option value="">All Types</option>
+    <option>Cold lead</option>
+    <option>Showed Interest</option>
+    <option>Hot lead</option>
+    <option>Not interested</option>
+  </select>
+</div>
+
+<div class="card">
+  <div id="leads"></div>
+</div>
+
+</div>
+</div>
 </div>
 
 <script>
@@ -267,215 +195,117 @@ const client = supabase.createClient(
   "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
 );
 
-// LOGIN
-async function login() {
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+let selectedLocation=null;
+let selectedBusiness=null;
 
-  const { error } = await client.auth.signInWithPassword({ email, password });
-
-  if (error) return alert(error.message);
-
+// AUTH
+async function login(){
+  const {error}=await client.auth.signInWithPassword({
+    email:email.value,password:password.value
+  });
+  if(error) return alert(error.message);
   checkUser();
 }
-
-async function logout() {
-  await client.auth.signOut();
-  location.reload();
+async function logout(){ await client.auth.signOut(); location.reload(); }
+async function checkUser(){
+  const {data}=await client.auth.getUser();
+  if(data.user){
+    loginScreen.style.display="none";
+    app.style.display="block";
+  }
 }
 
-async function checkUser() {
-  const { data } = await client.auth.getUser();
-
-  if (data.user) {
-    document.getElementById('loginScreen').style.display = "none";
-    document.getElementById('app').style.display = "block";
-    loadLeads();
-  } else {
-    document.getElementById('loginScreen').style.display = "flex";
-    document.getElementById('app').style.display = "none";
-  }
+// NAV
+function selectLocation(loc){
+  selectedLocation=loc;
+  businessStep.style.display="block";
+}
+function selectBusiness(type){
+  selectedBusiness=type;
+  crmSection.style.display="block";
+  loadLeads();
 }
 
 // UPLOAD
-async function uploadExcel() {
-  const file = document.getElementById('fileInput').files[0];
-  if (!file) return alert("Select file");
+async function uploadExcel(){
+  const file=fileInput.files[0];
+  if(!file) return alert("Select file");
 
-  const progressBox = document.getElementById('progressBox');
-  const progressBar = document.getElementById('progressBar');
-  const progressText = document.getElementById('progressText');
+  progressBox.style.display="block";
 
-  progressBox.style.display = "block";
+  const wb=XLSX.read(await file.arrayBuffer());
+  const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json(sheet);
+  const rows=json.map(r=>({
+    name:r.name||"",
+    phone:(r.phone||"").toString(),
+    email:r.email||"",
+    website:r.website||"",
+    location:selectedLocation,
+    business_type:selectedBusiness
+  }));
 
-const rows = json.map(r => ({
-  name: r.name || r.Name || "",
-  phone: (r.phone || r.Phone || "").toString(),
-  email: r.email || "",
-  website: r.website || "",
-  owner_name: r.owner_name || "",
-  lead_type: r.lead_type || "Cold lead"
-}));
-  let uploaded = 0;
+  for(let i=0;i<rows.length;i+=20){
+    const chunk=rows.slice(i,i+20);
+    const {error}=await client.from('leads')
+      .upsert(chunk,{onConflict:'phone'});
+    if(error) return alert(error.message);
 
-  for (let i = 0; i < rows.length; i += 20) {
-    const chunk = rows.slice(i, i + 20);
-
-    const { error } = await client.from('leads')
-      .upsert(chunk, { onConflict: 'phone' });
-
-    if (error) return alert(error.message);
-
-    uploaded += chunk.length;
-    const percent = Math.round((uploaded / rows.length) * 100);
-    progressBar.style.width = percent + "%";
-    progressText.innerText = `Uploading ${percent}%`;
+    progressBar.style.width=((i+20)/rows.length*100)+"%";
   }
 
-  progressText.innerText = "Done";
+  progressText.innerText="Done";
   loadLeads();
 }
 
 // LOAD
-async function loadLeads() {
-
-  const { data, error } = await client
-    .from('leads')
+async function loadLeads(){
+  const {data}=await client.from('leads')
     .select('*')
+    .eq('location',selectedLocation)
+    .eq('business_type',selectedBusiness)
     .limit(100);
 
-  if (error) {
-    console.error(error);
-    alert("Error loading leads");
-    return;
-  }
+  leads.innerHTML="";
 
-  const now = new Date();
+  data.forEach(l=>{
+    const div=document.createElement('div');
+    div.className="lead";
 
-  const search = document.getElementById("searchBox").value.toLowerCase();
-  const status = document.getElementById("statusFilter").value;
-  const type = document.getElementById("leadTypeFilter").value;
-
-  const filtered = data.filter(l => {
-
-    const matchSearch =
-      (l.name || "").toLowerCase().includes(search) ||
-      (l.phone || "").includes(search);
-
-    const matchStatus = !status || l.status === status;
-    const matchType = !type || l.lead_type === type;
-
-    return matchSearch && matchStatus && matchType;
-  });
-
-  const container = document.getElementById('leads');
-  container.innerHTML = "";
-
-  filtered.forEach(lead => {
-
-    const isToday = lead.followup_at &&
-      new Date(lead.followup_at).toDateString() === new Date().toDateString();
-
-    const div = document.createElement('div');
-    div.className = "lead " + (isToday ? "followup-today" : "");
-
-    div.innerHTML = `
-      <b>${lead.name || ''}</b><br>
-      📞 ${lead.phone || ''}<br>
-      ✉️ ${lead.email || 'No email'}<br>
-
-      🌐 ${lead.website 
-        ? `<a href="${lead.website.startsWith('http') ? lead.website : 'https://' + lead.website}" target="_blank">Visit</a>` 
-        : 'No website'}
-
-      <br><br>
-
-      Next Follow-up:
-      <input 
-        type="datetime-local" 
-        value="${lead.followup_at ? new Date(lead.followup_at).toISOString().slice(0,16) : ''}" 
-        onchange="updateFollowup('${lead.id}', this.value)"
-      >
-
-      <br><br>
-
-      Lead Type:
-      <select onchange="updateLeadType('${lead.id}', this.value)">
-        <option ${lead.lead_type==='Cold lead'?'selected':''}>Cold lead</option>
-        <option ${lead.lead_type==='Showed Interest'?'selected':''}>Showed Interest</option>
-        <option ${lead.lead_type==='Hot lead'?'selected':''}>Hot lead</option>
-        <option ${lead.lead_type==='Not interested'?'selected':''}>Not interested</option>
-      </select>
-
-      <br><br>
+    div.innerHTML=`
+      <b>${l.name}</b><br>
+      📞 ${l.phone}<br>
+      ✉️ ${l.email||'No email'}<br>
 
       <div class="actions">
-        <button onclick="copy('${lead.phone}')">Copy Phone</button>
-        ${lead.email ? `<button onclick="copy('${lead.email}')">Copy Email</button>` : ""}
-        ${lead.email ? `<button onclick="sendEmail('${lead.email}', '${lead.name}')">Send Email</button>` : ""}
+        <button onclick="copy('${l.phone}')">Phone</button>
+        ${l.email?`<button onclick="copy('${l.email}')">Email</button>`:''}
       </div>
 
-      <br>
-
       Status:
-      <select onchange="updateStatus('${lead.id}', this.value)">
-        <option ${lead.status==='new'?'selected':''}>new</option>
-        <option ${lead.status==='contacted'?'selected':''}>contacted</option>
-        <option ${lead.status==='followup'?'selected':''}>followup</option>
-        <option ${lead.status==='closed'?'selected':''}>closed</option>
+      <select onchange="updateStatus('${l.id}',this.value)">
+        <option ${l.status==='new'?'selected':''}>new</option>
+        <option ${l.status==='contacted'?'selected':''}>contacted</option>
+        <option ${l.status==='closed'?'selected':''}>closed</option>
       </select>
 
-      <br><br>
-
       Comment:
-      <textarea onchange="updateComment('${lead.id}', this.value)">
-        ${lead.comment || ''}
+      <textarea onchange="updateComment('${l.id}',this.value)">
+      ${l.comment||''}
       </textarea>
     `;
 
-    container.appendChild(div);
+    leads.appendChild(div);
   });
 }
+
 // UTIL
-function copy(text) {
-  navigator.clipboard.writeText(text);
+function copy(t){navigator.clipboard.writeText(t);}
+async function updateStatus(id,status){
+  await client.from('leads').update({status}).eq('id',id);
 }
-
-async function updateStatus(id, status) {
-  await client.from('leads').update({ status }).eq('id', id);
-}
-
-async function updateComment(id, comment) {
-  await client.from('leads').update({ comment }).eq('id', id);
-}
-async function updateFollowup(id, datetime) {
-  if (!datetime) return;
-
-  // convert to ISO (important for Supabase)
-  const iso = new Date(datetime).toISOString();
-
-  await client
-    .from('leads')
-    .update({ followup_at: iso })
-    .eq('id', id);
-}
-async function updateLeadType(id, lead_type) {
-  await client.from('leads').update({ lead_type }).eq('id', id);
-}
-  
-function sendEmail(email, name) {
-  const subject = encodeURIComponent("Quick follow-up");
-  const body = encodeURIComponent(`Hi ${name || ""},
-
-Let’s connect:
-https://meet.google.com/new`);
-
-  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+async function updateComment(id,comment){
+  await client.from('leads').update({comment}).eq('id',id);
 }
 
 checkUser();
