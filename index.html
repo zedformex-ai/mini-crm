@@ -1,309 +1,1009 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zedformex CRM</title>
-
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --primary:#1f5f99;
-  --bg:#f4f8fc;
+  --navy: #0f1e35;
+  --navy2: #162844;
+  --navy3: #1e3556;
+  --blue: #2f7fdc;
+  --blue-light: #4a9af5;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --bg: #f0f4f9;
+  --white: #ffffff;
+  --text: #0f1e35;
+  --muted: #6b7a90;
+  --border: #dce4ef;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(15,30,53,0.08);
 }
 
-body { margin:0; font-family:Inter; background:var(--bg); }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
 
-/* LOGIN */
+/* ── TOAST ── */
+#toast-container {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--navy);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: slideIn .2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error   { border-left: 3px solid var(--red); }
+.toast.info    { border-left: 3px solid var(--blue); }
+@keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+/* ── LOGIN ── */
 #loginScreen {
-  position:fixed; inset:0;
-  background:#1f5f99;
-  display:flex; align-items:center; justify-content:center;
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, var(--navy) 0%, #0a1628 100%);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
 }
-
 .login-card {
-  background:#eef8eb;
-  padding:30px;
-  border-radius:16px;
-  width:300px;
-  display:flex; flex-direction:column; gap:12px;
+  background: var(--navy2);
+  padding: 40px;
+  border-radius: 16px;
+  width: 360px;
+  border: 1px solid var(--navy3);
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
 }
-
-/* APP LAYOUT */
-.app {
-  display:flex;
-  height:100vh;
+.login-logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
 }
+.login-logo span { color: var(--blue-light); }
+.login-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.login-card label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8a9bb5;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+.login-card input {
+  width: 100%;
+  background: var(--navy3);
+  border: 1px solid #2a4060;
+  color: #fff;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border .2s;
+}
+.login-card input:focus { border-color: var(--blue); }
+.login-card input::placeholder { color: #4a6080; }
+.btn-login {
+  width: 100%;
+  margin-top: 24px;
+  padding: 12px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+.btn-login:hover { background: var(--blue-light); }
+.btn-login:active { transform: scale(.98); }
+.btn-login:disabled { opacity:.5; cursor:not-allowed; }
 
-/* SIDEBAR */
+/* ── APP SHELL ── */
+#app { display: none; height: 100vh; }
+.shell { display: flex; height: 100vh; }
+
+/* ── SIDEBAR ── */
 .sidebar {
-  width:260px;
-  background:#1f5f99;
-  color:white;
-  padding:20px;
+  width: 240px;
+  min-width: 240px;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
 }
-
-.sidebar h3 { margin-top:0; }
-
-.sidebar select, .sidebar button {
-  width:100%;
-  margin-top:10px;
-  padding:10px;
-  border-radius:8px;
-  border:none;
+.sidebar-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--navy3);
 }
-
-.sidebar button {
-  background:white;
-  color:#1f5f99;
-  font-weight:600;
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.5px;
 }
+.brand span { color: var(--blue-light); }
+.brand-sub { font-size: 11px; color: #4a6a90; margin-top: 2px; font-family: 'DM Mono', monospace; }
 
-/* MAIN */
+.sidebar-body { padding: 16px; flex: 1; overflow-y: auto; }
+
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4a6a90;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+.sidebar-label:first-child { margin-top: 0; }
+
+.sidebar select {
+  width: 100%;
+  background: var(--navy2);
+  border: 1px solid var(--navy3);
+  color: #c8d8ec;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a6a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.sidebar select:focus { border-color: var(--blue); }
+.sidebar select option { background: var(--navy2); }
+
+.btn-load {
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background .2s;
+}
+.btn-load:hover { background: var(--blue-light); }
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--navy3);
+}
+.btn-logout {
+  width: 100%;
+  padding: 9px;
+  background: transparent;
+  color: #6b8aaa;
+  border: 1px solid var(--navy3);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all .2s;
+}
+.btn-logout:hover { background: var(--navy2); color: #fff; }
+
+/* ── MAIN ── */
 .main {
-  flex:1;
-  padding:20px;
-  overflow:auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* CARD */
-.card {
-  background:white;
-  padding:16px;
-  border-radius:12px;
-  margin-bottom:14px;
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--muted);
+}
+.stat-pill .num { font-size: 15px; font-weight: 700; color: var(--text); }
+.stat-pill.all   .num { color: var(--navy); }
+.stat-pill.new   .num { color: var(--blue); }
+.stat-pill.cont  .num { color: var(--orange); }
+.stat-pill.closed .num { color: var(--green); }
+.dot { width:8px; height:8px; border-radius:50%; }
+.dot.blue   { background:var(--blue); }
+.dot.orange { background:var(--orange); }
+.dot.green  { background:var(--green); }
+.dot.navy   { background:var(--navy); }
+
+/* Controls bar */
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+.search-wrap {
+  flex: 1;
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+}
+.search-wrap input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  background: var(--bg);
+  transition: border .2s;
+}
+.search-wrap input:focus { border-color: var(--blue); background: #fff; }
+
+.controls select {
+  padding: 9px 30px 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.controls select:focus { border-color: var(--blue); }
+
+.upload-btn-wrap { position: relative; }
+.upload-btn-wrap input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+}
+.btn-upload {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 14px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s;
+  pointer-events: none;
+}
+.upload-btn-wrap:hover .btn-upload { background: var(--navy2); }
+
+/* Leads area */
+.leads-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
 }
 
-/* LEADS */
-.lead {
-  border:1px solid #e2e8f0;
-  padding:12px;
-  border-radius:10px;
-  margin-top:10px;
+/* Empty / loading states */
+.state-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.state-msg svg { opacity: .3; }
+.state-msg p { font-weight: 500; }
+
+/* Lead card */
+.lead-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  transition: box-shadow .15s;
+}
+.lead-card:hover { box-shadow: var(--shadow); }
+
+.lead-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lead-info { flex: 1; }
+.lead-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.lead-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+.lead-contacts span { display: flex; align-items: center; gap: 4px; }
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.status-badge.new      { background: #dbeafe; color: #1d4ed8; }
+.status-badge.contacted { background: #fef3c7; color: #92400e; }
+.status-badge.closed    { background: #dcfce7; color: #166534; }
+
+.lead-bottom {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
 }
 
-.actions {
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-top:8px;
+.lead-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
 }
 
-button {
-  background:#1f5f99;
-  color:white;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
-  cursor:pointer;
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--muted);
+}
+.field-group select,
+.field-group input[type="datetime-local"],
+.field-group textarea {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border .15s;
+  width: 100%;
+}
+.field-group select:focus,
+.field-group input:focus,
+.field-group textarea:focus { border-color: var(--blue); background: #fff; }
+
+.field-group textarea {
+  resize: none;
+  height: 60px;
+  min-width: 200px;
 }
 
-input, select, textarea {
-  width:100%;
-  margin-top:6px;
-  padding:8px;
-  border-radius:6px;
-  border:1px solid #ccc;
+.lead-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
 }
+.btn-action {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-action.copy-phone  { background: #eff6ff; color: #2563eb; }
+.btn-action.copy-email  { background: #f0fdf4; color: #16a34a; }
+.btn-action.send-email  { background: #fff7ed; color: #c2410c; }
+.btn-action.save        { background: var(--navy); color: #fff; }
+.btn-action:hover { filter: brightness(.92); }
 
+/* Spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.page-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+.page-btn:hover { background: var(--bg); }
+.page-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* ── Empty landing ── */
+#emptyLanding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--muted);
+}
+.landing-icon {
+  width: 64px; height: 64px;
+  background: var(--navy);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 8px;
+}
 </style>
 </head>
 
 <body>
+<div id="toast-container"></div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
-    <h2>Login</h2>
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <div class="login-logo">Zedformex <span>CRM</span></div>
+    <div class="login-sub">Cold calling & lead management</div>
+    <label>Email</label>
+    <input id="loginEmail" type="email" placeholder="you@company.com" autocomplete="email">
+    <label>Password</label>
+    <input id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-login" id="loginBtn" onclick="login()">Sign in</button>
   </div>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;" class="app">
+<div id="app">
+<div class="shell">
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-  <h3>CRM</h3>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">Zedformex <span>CRM</span></div>
+      <div class="brand-sub">Lead Management v2</div>
+    </div>
 
-  <select id="locationSelect">
-    <option value="">Location</option>
-    <option>Mumbai</option>
-    <option>Delhi</option>
-    <option>Bangalore</option>
-    <option>New York</option>
-  </select>
+    <div class="sidebar-body">
+      <div class="sidebar-label">Location</div>
+      <select id="locationSelect">
+        <option value="">Select location</option>
+        <option>Mumbai</option>
+        <option>Delhi</option>
+        <option>Bangalore</option>
+        <option>New York</option>
+        <option>London</option>
+        <option>Dubai</option>
+      </select>
 
-  <select id="businessSelect">
-    <option value="">Business</option>
-    <option>Chiropractor</option>
-    <option>Dentist</option>
-    <option>Gym</option>
-    <option>Real Estate</option>
-  </select>
+      <div class="sidebar-label">Business Type</div>
+      <select id="businessSelect">
+        <option value="">Select business</option>
+        <option>Chiropractor</option>
+        <option>Dentist</option>
+        <option>Gym</option>
+        <option>Real Estate</option>
+        <option>Law Firm</option>
+        <option>E-Commerce</option>
+        <option>Restaurant</option>
+      </select>
 
-  <button onclick="initCRM()">Load</button>
+      <button class="btn-load" onclick="initCRM()">Load Leads →</button>
+    </div>
 
-  <button onclick="logout()">Logout</button>
-</div>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">Sign out</button>
+    </div>
+  </div>
 
-<!-- MAIN -->
-<div class="main">
+  <!-- MAIN -->
+  <div class="main">
 
-<div id="crmSection" style="display:none;">
+    <!-- Empty landing -->
+    <div id="emptyLanding" style="display:flex;">
+      <div class="landing-icon">
+        <svg width="32" height="32" fill="none" stroke="#4a9af5" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <p style="font-size:16px;font-weight:700;color:#0f1e35;">Select location & business type</p>
+      <p style="font-size:13px;">Choose from the sidebar and click Load Leads to begin</p>
+    </div>
 
-<div class="card">
-  <input type="file" id="fileInput">
-  <button onclick="uploadExcel()">Upload Leads</button>
-</div>
+    <!-- CRM Section (hidden until loaded) -->
+    <div id="crmSection" style="display:none; flex-direction:column; height:100%;">
 
-<div class="card">
-  <input id="searchBox" placeholder="Search..." oninput="loadLeads()">
+      <!-- Stats bar -->
+      <div class="stats-bar" id="statsBar">
+        <div class="stat-pill all"><div class="dot navy"></div> Total <span class="num" id="statTotal">0</span></div>
+        <div class="stat-pill new"><div class="dot blue"></div> New <span class="num" id="statNew">0</span></div>
+        <div class="stat-pill cont"><div class="dot orange"></div> Contacted <span class="num" id="statContacted">0</span></div>
+        <div class="stat-pill closed"><div class="dot green"></div> Closed <span class="num" id="statClosed">0</span></div>
+      </div>
 
-  <select id="statusFilter" onchange="loadLeads()">
-    <option value="">All Status</option>
-    <option>new</option>
-    <option>contacted</option>
-    <option>closed</option>
-  </select>
-</div>
+      <!-- Controls -->
+      <div class="controls">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input id="searchBox" placeholder="Search by name, phone, email…" oninput="debounceLoad()">
+        </div>
 
-<div class="card">
-  <div id="leads"></div>
-</div>
+        <select id="statusFilter" onchange="loadLeads()">
+          <option value="">All Status</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="closed">Closed</option>
+        </select>
 
-</div>
+        <select id="typeFilter" onchange="loadLeads()">
+          <option value="">All Types</option>
+          <option value="cold">Cold</option>
+          <option value="warm">Warm</option>
+          <option value="hot">Hot</option>
+        </select>
+
+        <div class="upload-btn-wrap">
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="uploadExcel(this)">
+          <div class="btn-upload">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload Excel
+          </div>
+        </div>
+      </div>
+
+      <!-- Leads list -->
+      <div class="leads-area" id="leadsArea">
+        <div class="state-msg" id="leadsEmpty" style="display:none;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <p>No leads found</p>
+          <span>Try adjusting your filters or upload leads via Excel</span>
+        </div>
+        <div id="leads"></div>
+        <div class="pagination" id="paginationBar" style="display:none;">
+          <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+          <span id="pageInfo">Page 1</span>
+          <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
 </div>
 </div>
 
 <script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────
+const SUPABASE_URL  = "https://vdyelzvodduuzmmlocnp.supabase.co";
+const SUPABASE_KEY  = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
+const PAGE_SIZE     = 30;
 
-const client = supabase.createClient(
-  "https://vdyelzvodduuzmmlocnp.supabase.co",
-  "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW"
-);
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let selectedLocation=null;
-let selectedBusiness=null;
+let selectedLocation = null;
+let selectedBusiness = null;
+let currentPage      = 1;
+let totalCount       = 0;
+let searchTimer      = null;
 
-// AUTH
-async function login(){
-  const {error}=await client.auth.signInWithPassword({
-    email:email.value,password:password.value
-  });
-  if(error) return alert(error.message);
-  checkUser();
+// ─── TOAST ──────────────────────────────────────────────────────────────
+function toast(msg, type = "info") {
+  const icons = { success:"✓", error:"✕", info:"ℹ" };
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+  document.getElementById("toast-container").appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
-async function logout(){ await client.auth.signOut(); location.reload(); }
-async function checkUser(){
-  const {data}=await client.auth.getUser();
-  if(data.user){
-    loginScreen.style.display="none";
-    app.style.display="flex";
+
+// ─── AUTH ────────────────────────────────────────────────────────────────
+async function login() {
+  const email    = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const btn      = document.getElementById("loginBtn");
+
+  if (!email || !password) return toast("Enter email and password", "error");
+
+  btn.disabled = true;
+  btn.textContent = "Signing in…";
+
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) {
+    toast(error.message, "error");
+    btn.disabled = false;
+    btn.textContent = "Sign in";
+    return;
+  }
+  showApp();
+}
+
+async function logout() {
+  await client.auth.signOut();
+  location.reload();
+}
+
+async function checkUser() {
+  const { data } = await client.auth.getUser();
+  if (data.user) showApp();
+}
+
+function showApp() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+function initCRM() {
+  const loc = document.getElementById("locationSelect").value;
+  const biz = document.getElementById("businessSelect").value;
+
+  if (!loc || !biz) return toast("Select both location and business type", "error");
+
+  selectedLocation = loc;
+  selectedBusiness = biz;
+  currentPage = 1;
+
+  document.getElementById("emptyLanding").style.display = "none";
+  document.getElementById("crmSection").style.display   = "flex";
+
+  loadLeads();
+}
+
+// ─── UPLOAD ──────────────────────────────────────────────────────────────
+async function uploadExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  toast("Parsing file…", "info");
+
+  try {
+    const wb   = XLSX.read(await file.arrayBuffer());
+    const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+    if (!json.length) return toast("File is empty or unreadable", "error");
+
+    const rows = json.map(r => ({
+      name:          (r.name  || r.Name  || "").toString().trim(),
+      phone:         (r.phone || r.Phone || "").toString().trim(),
+      email:         (r.email || r.Email || "").toString().trim(),
+      location:      selectedLocation,
+      business_type: selectedBusiness,
+      status:        "new",
+    })).filter(r => r.phone); // phone is required
+
+    // Chunk into batches of 200
+    const chunks = [];
+    for (let i = 0; i < rows.length; i += 200) chunks.push(rows.slice(i, i + 200));
+
+    for (const chunk of chunks) {
+      const { error } = await client.from("leads").upsert(chunk, { onConflict: "phone" });
+      if (error) throw error;
+    }
+
+    toast(`✓ Uploaded ${rows.length} leads`, "success");
+    input.value = "";
+    loadLeads();
+  } catch (e) {
+    toast("Upload failed: " + e.message, "error");
   }
 }
 
-// INIT
-function initCRM(){
-  const loc=locationSelect.value;
-  const biz=businessSelect.value;
-
-  if(!loc||!biz) return alert("Select both");
-
-  selectedLocation=loc;
-  selectedBusiness=biz;
-
-  crmSection.style.display="block";
-  loadLeads();
+// ─── LOAD LEADS ──────────────────────────────────────────────────────────
+function debounceLoad() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { currentPage = 1; loadLeads(); }, 350);
 }
 
-// UPLOAD
-async function uploadExcel(){
-  const file=fileInput.files[0];
-  if(!file) return alert("Select file");
+async function loadLeads() {
+  const search = document.getElementById("searchBox").value.trim();
+  const status = document.getElementById("statusFilter").value;
+  const type   = document.getElementById("typeFilter").value;
 
-  const wb=XLSX.read(await file.arrayBuffer());
-  const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const to   = from + PAGE_SIZE - 1;
 
-  const rows=json.map(r=>({
-    name:r.name||"",
-    phone:(r.phone||"").toString(),
-    email:r.email||"",
-    location:selectedLocation,
-    business_type:selectedBusiness
-  }));
+  let query = client
+    .from("leads")
+    .select("*", { count: "exact" })
+    .eq("location", selectedLocation)
+    .eq("business_type", selectedBusiness)
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
-  await client.from('leads').upsert(rows,{onConflict:'phone'});
+  if (status) query = query.eq("status", status);
+  if (type)   query = query.eq("lead_type", type);
+  if (search) query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
 
-  loadLeads();
+  const { data, error, count } = await query;
+
+  if (error) return toast("Failed to load: " + error.message, "error");
+
+  totalCount = count || 0;
+  renderLeads(data || []);
+  renderStats();
+  renderPagination();
 }
 
-// LOAD
-async function loadLeads(){
-  const {data}=await client.from('leads')
-    .select('*')
-    .eq('location',selectedLocation)
-    .eq('business_type',selectedBusiness);
+async function renderStats() {
+  const { data } = await client
+    .from("leads")
+    .select("status")
+    .eq("location", selectedLocation)
+    .eq("business_type", selectedBusiness);
 
-  leads.innerHTML="";
+  if (!data) return;
+  const counts = { new: 0, contacted: 0, closed: 0 };
+  data.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
 
-  data.forEach(l=>{
-    const div=document.createElement('div');
-    div.className="lead";
+  document.getElementById("statTotal").textContent     = data.length;
+  document.getElementById("statNew").textContent       = counts.new;
+  document.getElementById("statContacted").textContent = counts.contacted;
+  document.getElementById("statClosed").textContent    = counts.closed;
+}
 
-    div.innerHTML=`
-      <b>${l.name}</b><br>
-      📞 ${l.phone}<br>
-      ✉️ ${l.email||'No email'}<br>
+function renderPagination() {
+  const bar   = document.getElementById("paginationBar");
+  const pages = Math.ceil(totalCount / PAGE_SIZE);
 
-      <div class="actions">
-        <button onclick="copy('${l.phone}')">Copy Phone</button>
-        ${l.email?`<button onclick="copy('${l.email}')">Copy Email</button>`:''}
-        ${l.email?`<button onclick="sendEmail('${l.email}','${l.name}')">Email</button>`:''}
+  if (pages <= 1) { bar.style.display = "none"; return; }
+
+  bar.style.display = "flex";
+  document.getElementById("pageInfo").textContent  = `Page ${currentPage} of ${pages}`;
+  document.getElementById("prevBtn").disabled = currentPage <= 1;
+  document.getElementById("nextBtn").disabled = currentPage >= pages;
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  loadLeads();
+  document.getElementById("leadsArea").scrollTop = 0;
+}
+
+// ─── RENDER LEADS ────────────────────────────────────────────────────────
+function renderLeads(data) {
+  const container = document.getElementById("leads");
+  const empty     = document.getElementById("leadsEmpty");
+
+  container.innerHTML = "";
+
+  if (!data.length) {
+    empty.style.display = "flex";
+    return;
+  }
+  empty.style.display = "none";
+
+  data.forEach(l => {
+    const card = document.createElement("div");
+    card.className = "lead-card";
+    card.id = `card-${l.id}`;
+
+    const statusClass = l.status || "new";
+    const followup    = l.follow_up ? l.follow_up.slice(0, 16) : "";
+
+    card.innerHTML = `
+      <div class="lead-top">
+        <div class="lead-info">
+          <div class="lead-name">${esc(l.name) || "Unnamed Lead"}</div>
+          <div class="lead-contacts">
+            <span>📞 ${esc(l.phone) || "—"}</span>
+            ${l.email ? `<span>✉️ ${esc(l.email)}</span>` : ""}
+          </div>
+        </div>
+        <span class="status-badge ${statusClass}">${statusClass}</span>
       </div>
 
-      Status:
-      <select onchange="updateStatus('${l.id}',this.value)">
-        <option ${l.status==='new'?'selected':''}>new</option>
-        <option ${l.status==='contacted'?'selected':''}>contacted</option>
-        <option ${l.status==='closed'?'selected':''}>closed</option>
-      </select>
+      <div class="lead-bottom">
+        <div class="lead-fields">
 
-      Comment:
-      <textarea onchange="updateComment('${l.id}',this.value)">
-      ${l.comment||''}
-      </textarea>
+          <div class="field-group">
+            <div class="field-label">Status</div>
+            <select onchange="updateField('${l.id}', 'status', this.value, this)">
+              <option value="new"       ${l.status==='new'?'selected':''}>New</option>
+              <option value="contacted" ${l.status==='contacted'?'selected':''}>Contacted</option>
+              <option value="closed"    ${l.status==='closed'?'selected':''}>Closed</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">Lead Type</div>
+            <select onchange="updateField('${l.id}', 'lead_type', this.value, this)">
+              <option value="cold" ${l.lead_type==='cold'?'selected':''}>Cold</option>
+              <option value="warm" ${l.lead_type==='warm'?'selected':''}>Warm</option>
+              <option value="hot"  ${l.lead_type==='hot'?'selected':''}>Hot</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label">Follow-up</div>
+            <input type="datetime-local" value="${followup}"
+              onchange="updateField('${l.id}', 'follow_up', this.value, this)">
+          </div>
+
+          <div class="field-group" style="flex:2;">
+            <div class="field-label">Comment</div>
+            <textarea id="comment-${l.id}" placeholder="Add notes…">${esc(l.comment || '')}</textarea>
+          </div>
+
+        </div>
+
+        <div class="lead-actions">
+          <button class="btn-action copy-phone" onclick="copy('${esc(l.phone)}', 'Phone copied')">
+            📋 Phone
+          </button>
+          ${l.email ? `
+          <button class="btn-action copy-email" onclick="copy('${esc(l.email)}', 'Email copied')">
+            📋 Email
+          </button>
+          <button class="btn-action send-email" onclick="sendEmail('${esc(l.email)}', '${esc(l.name)}')">
+            📤 Email
+          </button>` : ""}
+          <button class="btn-action save" onclick="saveComment('${l.id}')">
+            💾 Save
+          </button>
+        </div>
+      </div>
     `;
 
-    leads.appendChild(div);
+    container.appendChild(card);
   });
 }
 
-// UTIL
-function copy(t){navigator.clipboard.writeText(t);}
-function sendEmail(email,name){
-  window.open(`mailto:${email}?subject=Follow up&body=Hi ${name}, The discussion was wonderful and extremely insightful for me. Here's the Google Meet link as discussed. Regards`);
+// ─── UPDATES ─────────────────────────────────────────────────────────────
+async function updateField(id, field, value, el) {
+  const { error } = await client.from("leads").update({ [field]: value }).eq("id", id);
+  if (error) { toast("Save failed", "error"); return; }
+
+  // Update status badge if status changed
+  if (field === "status") {
+    const badge = document.querySelector(`#card-${id} .status-badge`);
+    if (badge) { badge.className = `status-badge ${value}`; badge.textContent = value; }
+    renderStats();
+  }
+
+  toast(`Saved`, "success");
 }
 
-async function updateStatus(id,status){
-  await client.from('leads').update({status}).eq('id',id);
+async function saveComment(id) {
+  const val = document.getElementById(`comment-${id}`).value;
+  const { error } = await client.from("leads").update({ comment: val }).eq("id", id);
+  if (error) return toast("Save failed", "error");
+  toast("Comment saved", "success");
 }
 
-async function updateComment(id,comment){
-  await client.from('leads').update({comment}).eq('id',id);
+// ─── UTILS ───────────────────────────────────────────────────────────────
+function copy(text, msg = "Copied!") {
+  navigator.clipboard.writeText(text).then(() => toast(msg, "success"));
 }
 
+function sendEmail(email, name) {
+  const subject = encodeURIComponent("Following up on our discussion");
+  const body    = encodeURIComponent(`Hi ${name},\n\nThe discussion was wonderful and extremely insightful for me. Here's the Google Meet link as discussed.\n\nLooking forward to connecting!\n\nBest regards`);
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+}
+
+function esc(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
+// Enter to login
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && document.getElementById("loginScreen").style.display !== "none") login();
+});
+
+// Boot
 checkUser();
-
 </script>
-
 </body>
 </html>
