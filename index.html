@@ -7,543 +7,127 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
+* { box-sizing:border-box; margin:0; padding:0; }
 :root {
-  --navy: #0f1e35;
-  --navy2: #162844;
-  --navy3: #1e3556;
-  --blue: #2f7fdc;
-  --blue-light: #4a9af5;
-  --green: #22c55e;
-  --orange: #f59e0b;
-  --red: #ef4444;
-  --bg: #f0f4f9;
-  --white: #ffffff;
-  --text: #0f1e35;
-  --muted: #6b7a90;
-  --border: #dce4ef;
-  --radius: 10px;
-  --shadow: 0 2px 12px rgba(15,30,53,0.08);
+  --navy:#0f1e35; --navy2:#162844; --navy3:#1e3556;
+  --blue:#2f7fdc; --blue-light:#4a9af5;
+  --green:#22c55e; --orange:#f59e0b; --red:#ef4444;
+  --bg:#f0f4f9; --white:#ffffff; --text:#0f1e35;
+  --muted:#6b7a90; --border:#dce4ef;
+  --radius:10px; --shadow:0 2px 12px rgba(15,30,53,0.08);
 }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  height: 100vh;
-  overflow: hidden;
-}
+/* TOAST */
+#toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--navy); color:#fff; padding:10px 16px; border-radius:8px; font-size:13px; font-weight:500; animation:slideIn .2s ease; box-shadow:0 4px 16px rgba(0,0,0,.2); display:flex; align-items:center; gap:8px; }
+.toast.success { border-left:3px solid var(--green); }
+.toast.error   { border-left:3px solid var(--red); }
+.toast.info    { border-left:3px solid var(--blue); }
+@keyframes slideIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
 
-/* ── TOAST ── */
-#toast-container {
-  position: fixed;
-  top: 20px; right: 20px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toast {
-  background: var(--navy);
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  animation: slideIn .2s ease;
-  box-shadow: 0 4px 16px rgba(0,0,0,.2);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.toast.success { border-left: 3px solid var(--green); }
-.toast.error   { border-left: 3px solid var(--red); }
-.toast.info    { border-left: 3px solid var(--blue); }
-@keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-
-/* ── LOGIN ── */
-#loginScreen {
-  position: fixed; inset: 0;
-  background: linear-gradient(135deg, var(--navy) 0%, #0a1628 100%);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 100;
-}
-.login-card {
-  background: var(--navy2);
-  padding: 40px;
-  border-radius: 16px;
-  width: 360px;
-  border: 1px solid var(--navy3);
-  box-shadow: 0 24px 64px rgba(0,0,0,.4);
-}
-.login-logo {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 6px;
-  letter-spacing: -0.5px;
-}
-.login-logo span { color: var(--blue-light); }
-.login-sub {
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 28px;
-}
-.login-card label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #8a9bb5;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-.login-card input {
-  width: 100%;
-  background: var(--navy3);
-  border: 1px solid #2a4060;
-  color: #fff;
-  padding: 11px 14px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: border .2s;
-}
-.login-card input:focus { border-color: var(--blue); }
-.login-card input::placeholder { color: #4a6080; }
-.btn-login {
-  width: 100%;
-  margin-top: 24px;
-  padding: 12px;
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background .2s, transform .1s;
-}
-.btn-login:hover { background: var(--blue-light); }
-.btn-login:active { transform: scale(.98); }
+/* LOGIN */
+#loginScreen { position:fixed; inset:0; background:linear-gradient(135deg,var(--navy) 0%,#0a1628 100%); display:flex; align-items:center; justify-content:center; z-index:100; }
+.login-card { background:var(--navy2); padding:40px; border-radius:16px; width:360px; border:1px solid var(--navy3); box-shadow:0 24px 64px rgba(0,0,0,.4); }
+.login-logo { font-size:22px; font-weight:700; color:#fff; margin-bottom:6px; letter-spacing:-.5px; }
+.login-logo span { color:var(--blue-light); }
+.login-sub { font-size:13px; color:var(--muted); margin-bottom:28px; }
+.login-card label { display:block; font-size:12px; font-weight:600; color:#8a9bb5; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px; margin-top:16px; }
+.login-card input { width:100%; background:var(--navy3); border:1px solid #2a4060; color:#fff; padding:11px 14px; border-radius:8px; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; transition:border .2s; }
+.login-card input:focus { border-color:var(--blue); }
+.login-card input::placeholder { color:#4a6080; }
+.btn-login { width:100%; margin-top:24px; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .2s; }
+.btn-login:hover { background:var(--blue-light); }
 .btn-login:disabled { opacity:.5; cursor:not-allowed; }
 
-/* ── APP SHELL ── */
-#app { display: none; height: 100vh; }
-.shell { display: flex; height: 100vh; }
+/* SHELL */
+#app { display:none; height:100vh; }
+.shell { display:flex; height:100vh; }
 
-/* ── SIDEBAR ── */
-.sidebar {
-  width: 240px;
-  min-width: 240px;
-  background: var(--navy);
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-}
-.sidebar-header {
-  padding: 22px 20px 18px;
-  border-bottom: 1px solid var(--navy3);
-}
-.brand {
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -.5px;
-}
-.brand span { color: var(--blue-light); }
-.brand-sub { font-size: 11px; color: #4a6a90; margin-top: 2px; font-family: 'DM Mono', monospace; }
+/* SIDEBAR */
+.sidebar { width:240px; min-width:240px; background:var(--navy); display:flex; flex-direction:column; overflow:hidden; }
+.sidebar-header { padding:22px 20px 18px; border-bottom:1px solid var(--navy3); }
+.brand { font-size:18px; font-weight:700; color:#fff; letter-spacing:-.5px; }
+.brand span { color:var(--blue-light); }
+.brand-sub { font-size:11px; color:#4a6a90; margin-top:2px; font-family:'DM Mono',monospace; }
+.sidebar-body { padding:16px; flex:1; overflow-y:auto; }
+.sidebar-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#4a6a90; margin-bottom:6px; margin-top:16px; }
+.sidebar-label:first-child { margin-top:0; }
+.sidebar select { width:100%; background:var(--navy2); border:1px solid var(--navy3); color:#c8d8ec; padding:9px 12px; border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a6a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+.sidebar select:focus { border-color:var(--blue); }
+.sidebar select option { background:var(--navy2); }
+.btn-load { width:100%; margin-top:20px; padding:11px; background:var(--blue); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .2s; }
+.btn-load:hover { background:var(--blue-light); }
+.sidebar-footer { padding:16px; border-top:1px solid var(--navy3); }
+.btn-logout { width:100%; padding:9px; background:transparent; color:#6b8aaa; border:1px solid var(--navy3); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .2s; }
+.btn-logout:hover { background:var(--navy2); color:#fff; }
 
-.sidebar-body { padding: 16px; flex: 1; overflow-y: auto; }
-
-.sidebar-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #4a6a90;
-  margin-bottom: 6px;
-  margin-top: 16px;
-}
-.sidebar-label:first-child { margin-top: 0; }
-
-.sidebar select {
-  width: 100%;
-  background: var(--navy2);
-  border: 1px solid var(--navy3);
-  color: #c8d8ec;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  appearance: none;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a6a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.sidebar select:focus { border-color: var(--blue); }
-.sidebar select option { background: var(--navy2); }
-
-.btn-load {
-  width: 100%;
-  margin-top: 20px;
-  padding: 11px;
-  background: var(--blue);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background .2s;
-}
-.btn-load:hover { background: var(--blue-light); }
-
-.sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid var(--navy3);
-}
-.btn-logout {
-  width: 100%;
-  padding: 9px;
-  background: transparent;
-  color: #6b8aaa;
-  border: 1px solid var(--navy3);
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all .2s;
-}
-.btn-logout:hover { background: var(--navy2); color: #fff; }
-
-/* ── MAIN ── */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Stats bar */
-.stats-bar {
-  display: flex;
-  gap: 12px;
-  padding: 16px 20px;
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-}
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  background: var(--bg);
-  color: var(--muted);
-}
-.stat-pill .num { font-size: 15px; font-weight: 700; color: var(--text); }
-.stat-pill.all   .num { color: var(--navy); }
-.stat-pill.new   .num { color: var(--blue); }
-.stat-pill.cont  .num { color: var(--orange); }
-.stat-pill.closed .num { color: var(--green); }
+/* MAIN */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.stats-bar { display:flex; gap:12px; padding:16px 20px; background:var(--white); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.stat-pill { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; font-size:13px; font-weight:600; background:var(--bg); color:var(--muted); }
+.stat-pill .num { font-size:15px; font-weight:700; }
+.stat-pill.all .num{color:var(--navy)} .stat-pill.new .num{color:var(--blue)} .stat-pill.cont .num{color:var(--orange)} .stat-pill.closed .num{color:var(--green)}
 .dot { width:8px; height:8px; border-radius:50%; }
-.dot.blue   { background:var(--blue); }
-.dot.orange { background:var(--orange); }
-.dot.green  { background:var(--green); }
-.dot.navy   { background:var(--navy); }
+.dot.blue{background:var(--blue)} .dot.orange{background:var(--orange)} .dot.green{background:var(--green)} .dot.navy{background:var(--navy)}
 
-/* Controls bar */
-.controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 20px;
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-}
-.search-wrap {
-  flex: 1;
-  position: relative;
-}
-.search-wrap svg {
-  position: absolute;
-  left: 11px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-}
-.search-wrap input {
-  width: 100%;
-  padding: 9px 12px 9px 36px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  background: var(--bg);
-  transition: border .2s;
-}
-.search-wrap input:focus { border-color: var(--blue); background: #fff; }
+.controls { display:flex; gap:10px; align-items:center; padding:12px 20px; background:var(--white); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.search-wrap { flex:1; min-width:160px; position:relative; }
+.search-wrap svg { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); }
+.search-wrap input { width:100%; padding:9px 12px 9px 36px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; outline:none; background:var(--bg); transition:border .2s; }
+.search-wrap input:focus { border-color:var(--blue); background:#fff; }
+.controls select { padding:9px 30px 9px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); outline:none; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+.controls select:focus { border-color:var(--blue); }
+.upload-btn-wrap { position:relative; }
+.upload-btn-wrap input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; }
+.btn-upload { display:flex; align-items:center; gap:6px; padding:9px 14px; background:var(--navy); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; white-space:nowrap; transition:background .2s; pointer-events:none; }
+.upload-btn-wrap:hover .btn-upload { background:var(--navy2); }
 
-.controls select {
-  padding: 9px 30px 9px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  outline: none;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a90' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.controls select:focus { border-color: var(--blue); }
+.leads-area { flex:1; overflow-y:auto; padding:16px 20px; }
+.state-msg { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:var(--muted); font-size:14px; }
+.state-msg svg { opacity:.3; }
+.state-msg p { font-weight:500; }
 
-.upload-btn-wrap { position: relative; }
-.upload-btn-wrap input[type="file"] {
-  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
-}
-.btn-upload {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 14px;
-  background: var(--navy);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background .2s;
-  pointer-events: none;
-}
-.upload-btn-wrap:hover .btn-upload { background: var(--navy2); }
+.lead-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:10px; transition:box-shadow .15s; }
+.lead-card:hover { box-shadow:var(--shadow); }
+.lead-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.lead-info { flex:1; }
+.lead-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.lead-contacts { display:flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; }
+.lead-contacts span { display:flex; align-items:center; gap:4px; }
+.status-badge { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; flex-shrink:0; }
+.status-badge.new{background:#dbeafe;color:#1d4ed8} .status-badge.contacted{background:#fef3c7;color:#92400e} .status-badge.closed{background:#dcfce7;color:#166534}
+.lead-bottom { margin-top:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+.lead-fields { display:flex; flex-wrap:wrap; gap:8px; flex:1; }
+.field-group { display:flex; flex-direction:column; gap:3px; min-width:120px; }
+.field-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+.field-group select,.field-group input[type="datetime-local"],.field-group textarea { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); outline:none; transition:border .15s; width:100%; }
+.field-group select:focus,.field-group input:focus,.field-group textarea:focus { border-color:var(--blue); background:#fff; }
+.field-group textarea { resize:none; height:60px; min-width:200px; }
+.lead-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.btn-action { display:flex; align-items:center; gap:5px; padding:7px 12px; border:none; border-radius:6px; font-size:12px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .15s; }
+.btn-action.copy-phone{background:#eff6ff;color:#2563eb} .btn-action.copy-email{background:#f0fdf4;color:#16a34a} .btn-action.send-email{background:#fff7ed;color:#c2410c} .btn-action.save{background:var(--navy);color:#fff}
+.btn-action:hover { filter:brightness(.92); }
 
-/* Leads area */
-.leads-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-}
-
-/* Empty / loading states */
-.state-msg {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 14px;
-}
-.state-msg svg { opacity: .3; }
-.state-msg p { font-weight: 500; }
-
-/* Lead card */
-.lead-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 10px;
-  transition: box-shadow .15s;
-}
-.lead-card:hover { box-shadow: var(--shadow); }
-
-.lead-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.lead-info { flex: 1; }
-.lead-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-.lead-contacts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--muted);
-  font-family: 'DM Mono', monospace;
-}
-.lead-contacts span { display: flex; align-items: center; gap: 4px; }
-
-.status-badge {
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.status-badge.new      { background: #dbeafe; color: #1d4ed8; }
-.status-badge.contacted { background: #fef3c7; color: #92400e; }
-.status-badge.closed    { background: #dcfce7; color: #166534; }
-
-.lead-bottom {
-  margin-top: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: flex-end;
-}
-
-.lead-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  flex: 1;
-}
-
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 120px;
-}
-.field-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  color: var(--muted);
-}
-.field-group select,
-.field-group input[type="datetime-local"],
-.field-group textarea {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 12px;
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  outline: none;
-  transition: border .15s;
-  width: 100%;
-}
-.field-group select:focus,
-.field-group input:focus,
-.field-group textarea:focus { border-color: var(--blue); background: #fff; }
-
-.field-group textarea {
-  resize: none;
-  height: 60px;
-  min-width: 200px;
-}
-
-.lead-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.btn-action {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 7px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-action.copy-phone  { background: #eff6ff; color: #2563eb; }
-.btn-action.copy-email  { background: #f0fdf4; color: #16a34a; }
-.btn-action.send-email  { background: #fff7ed; color: #c2410c; }
-.btn-action.save        { background: var(--navy); color: #fff; }
-.btn-action:hover { filter: brightness(.92); }
-
-/* Spinner */
-.spinner {
-  width: 20px; height: 20px;
-  border: 2px solid var(--border);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin .6s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Pagination ── */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 0 4px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.page-btn {
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-family: 'DM Sans', sans-serif;
-  transition: all .15s;
-}
-.page-btn:hover { background: var(--bg); }
+.pagination { display:flex; justify-content:center; align-items:center; gap:8px; padding:14px 0 4px; font-size:13px; color:var(--muted); }
+.page-btn { padding:6px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-size:13px; font-family:'DM Sans',sans-serif; transition:all .15s; }
+.page-btn:hover { background:var(--bg); }
 .page-btn:disabled { opacity:.4; cursor:not-allowed; }
 
-/* ── Empty landing ── */
-#emptyLanding {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--muted);
-}
-.landing-icon {
-  width: 64px; height: 64px;
-  background: var(--navy);
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
-}
+#emptyLanding { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:var(--muted); }
+.landing-icon { width:64px; height:64px; background:var(--navy); border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
 </style>
 </head>
-
 <body>
+
 <div id="toast-container"></div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-logo">Zedformex <span>CRM</span></div>
-    <div class="login-sub">Cold calling & lead management</div>
+    <div class="login-sub">Cold calling &amp; lead management</div>
     <label>Email</label>
     <input id="loginEmail" type="email" placeholder="you@company.com" autocomplete="email">
     <label>Password</label>
@@ -556,49 +140,36 @@ body {
 <div id="app">
 <div class="shell">
 
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-header">
       <div class="brand">Zedformex <span>CRM</span></div>
       <div class="brand-sub">Lead Management v2</div>
     </div>
-
     <div class="sidebar-body">
-      <div class="sidebar-label">Location</div>
-      <select id="locationSelect">
-        <option value="">Select location</option>
-        <option>Mumbai</option>
-        <option>Delhi</option>
-        <option>Bangalore</option>
-        <option>New York</option>
-        <option>London</option>
-        <option>Dubai</option>
+      <div class="sidebar-label">State</div>
+      <select id="stateSelect" onchange="populateCities()">
+        <option value="">Select state</option>
+      </select>
+
+      <div class="sidebar-label">City</div>
+      <select id="citySelect">
+        <option value="">Select state first</option>
       </select>
 
       <div class="sidebar-label">Business Type</div>
       <select id="businessSelect">
         <option value="">Select business</option>
-        <option>Chiropractor</option>
-        <option>Dentist</option>
-        <option>Gym</option>
-        <option>Real Estate</option>
-        <option>Law Firm</option>
-        <option>E-Commerce</option>
-        <option>Restaurant</option>
       </select>
 
-      <button class="btn-load" onclick="initCRM()">Load Leads →</button>
+      <button class="btn-load" onclick="initCRM()">Load Leads &rarr;</button>
     </div>
-
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">Sign out</button>
     </div>
   </div>
 
-  <!-- MAIN -->
   <div class="main">
 
-    <!-- Empty landing -->
     <div id="emptyLanding" style="display:flex;">
       <div class="landing-icon">
         <svg width="32" height="32" fill="none" stroke="#4a9af5" stroke-width="2" viewBox="0 0 24 24">
@@ -606,70 +177,56 @@ body {
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       </div>
-      <p style="font-size:16px;font-weight:700;color:#0f1e35;">Select location & business type</p>
+      <p style="font-size:16px;font-weight:700;color:#0f1e35;">Select state, city &amp; business type</p>
       <p style="font-size:13px;">Choose from the sidebar and click Load Leads to begin</p>
     </div>
 
-    <!-- CRM Section (hidden until loaded) -->
     <div id="crmSection" style="display:none; flex-direction:column; height:100%;">
 
-      <!-- Stats bar -->
-      <div class="stats-bar" id="statsBar">
+      <div class="stats-bar">
         <div class="stat-pill all"><div class="dot navy"></div> Total <span class="num" id="statTotal">0</span></div>
         <div class="stat-pill new"><div class="dot blue"></div> New <span class="num" id="statNew">0</span></div>
         <div class="stat-pill cont"><div class="dot orange"></div> Contacted <span class="num" id="statContacted">0</span></div>
         <div class="stat-pill closed"><div class="dot green"></div> Closed <span class="num" id="statClosed">0</span></div>
       </div>
 
-      <!-- Controls -->
       <div class="controls">
         <div class="search-wrap">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input id="searchBox" placeholder="Search by name, phone, email…" oninput="debounceLoad()">
         </div>
-
         <select id="statusFilter" onchange="loadLeads()">
           <option value="">All Status</option>
           <option value="new">New</option>
           <option value="contacted">Contacted</option>
           <option value="closed">Closed</option>
         </select>
-
         <select id="typeFilter" onchange="loadLeads()">
           <option value="">All Types</option>
           <option value="cold">Cold</option>
           <option value="warm">Warm</option>
           <option value="hot">Hot</option>
         </select>
-
         <div class="upload-btn-wrap">
           <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="uploadExcel(this)">
           <div class="btn-upload">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Upload Excel
           </div>
         </div>
       </div>
 
-      <!-- Leads list -->
       <div class="leads-area" id="leadsArea">
         <div class="state-msg" id="leadsEmpty" style="display:none;">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <p>No leads found</p>
-          <span>Try adjusting your filters or upload leads via Excel</span>
+          <span>Adjust filters or upload an Excel file</span>
         </div>
         <div id="leads"></div>
         <div class="pagination" id="paginationBar" style="display:none;">
-          <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+          <button class="page-btn" id="prevBtn" onclick="changePage(-1)">&#8592; Prev</button>
           <span id="pageInfo">Page 1</span>
-          <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+          <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next &#8594;</button>
         </div>
       </div>
 
@@ -680,10 +237,10 @@ body {
 </div>
 
 <script>
-// ─── CONFIG ─────────────────────────────────────────────────────────────
-const SUPABASE_URL  = "https://vdyelzvodduuzmmlocnp.supabase.co";
-const SUPABASE_KEY  = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
-const PAGE_SIZE     = 30;
+// ─── CONFIG ──────────────────────────────────────────────────────────────
+const SUPABASE_URL = "https://vdyelzvodduuzmmlocnp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
+const PAGE_SIZE    = 30;
 
 const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -693,12 +250,138 @@ let currentPage      = 1;
 let totalCount       = 0;
 let searchTimer      = null;
 
-// ─── TOAST ──────────────────────────────────────────────────────────────
+// ─── ALL 50 US STATES → TOP 10 CITIES ────────────────────────────────────
+const USA_DATA = {
+  "Alabama":        ["Birmingham","Montgomery","Huntsville","Mobile","Tuscaloosa","Hoover","Dothan","Auburn","Decatur","Madison"],
+  "Alaska":         ["Anchorage","Fairbanks","Juneau","Sitka","Ketchikan","Wasilla","Kenai","Kodiak","Bethel","Palmer"],
+  "Arizona":        ["Phoenix","Tucson","Mesa","Chandler","Scottsdale","Glendale","Gilbert","Tempe","Peoria","Surprise"],
+  "Arkansas":       ["Little Rock","Fort Smith","Fayetteville","Springdale","Jonesboro","North Little Rock","Conway","Rogers","Pine Bluff","Bentonville"],
+  "California":     ["Los Angeles","San Diego","San Jose","San Francisco","Fresno","Sacramento","Long Beach","Oakland","Bakersfield","Anaheim"],
+  "Colorado":       ["Denver","Colorado Springs","Aurora","Fort Collins","Lakewood","Thornton","Arvada","Westminster","Pueblo","Centennial"],
+  "Connecticut":    ["Bridgeport","New Haven","Stamford","Hartford","Waterbury","Norwalk","Danbury","New Britain","Greenwich","Meriden"],
+  "Delaware":       ["Wilmington","Dover","Newark","Middletown","Smyrna","Milford","Seaford","Georgetown","Elsmere","New Castle"],
+  "Florida":        ["Jacksonville","Miami","Tampa","Orlando","St. Petersburg","Hialeah","Port St. Lucie","Cape Coral","Tallahassee","Fort Lauderdale"],
+  "Georgia":        ["Atlanta","Augusta","Columbus","Macon","Savannah","Athens","Sandy Springs","Roswell","South Fulton","Johns Creek"],
+  "Hawaii":         ["Honolulu","Pearl City","Hilo","Kailua","Waipahu","Kaneohe","Mililani","Kahului","Ewa Beach","Kihei"],
+  "Idaho":          ["Boise","Meridian","Nampa","Idaho Falls","Pocatello","Caldwell","Coeur d'Alene","Twin Falls","Lewiston","Post Falls"],
+  "Illinois":       ["Chicago","Aurora","Joliet","Rockford","Springfield","Elgin","Peoria","Champaign","Waukegan","Cicero"],
+  "Indiana":        ["Indianapolis","Fort Wayne","Evansville","South Bend","Carmel","Fishers","Bloomington","Hammond","Gary","Muncie"],
+  "Iowa":           ["Des Moines","Cedar Rapids","Davenport","Sioux City","Iowa City","Waterloo","Ames","West Des Moines","Council Bluffs","Ankeny"],
+  "Kansas":         ["Wichita","Overland Park","Kansas City","Olathe","Topeka","Lawrence","Shawnee","Manhattan","Lenexa","Salina"],
+  "Kentucky":       ["Louisville","Lexington","Bowling Green","Owensboro","Covington","Richmond","Georgetown","Florence","Hopkinsville","Nicholasville"],
+  "Louisiana":      ["New Orleans","Baton Rouge","Shreveport","Metairie","Lafayette","Lake Charles","Kenner","Bossier City","Monroe","Alexandria"],
+  "Maine":          ["Portland","Lewiston","Bangor","South Portland","Auburn","Biddeford","Sanford","Augusta","Saco","Westbrook"],
+  "Maryland":       ["Baltimore","Columbia","Germantown","Silver Spring","Waldorf","Glen Burnie","Rockville","Ellicott City","Bethesda","Frederick"],
+  "Massachusetts":  ["Boston","Worcester","Springfield","Cambridge","Lowell","Brockton","New Bedford","Fall River","Lynn","Quincy"],
+  "Michigan":       ["Detroit","Grand Rapids","Warren","Sterling Heights","Ann Arbor","Lansing","Flint","Dearborn","Livonia","Westland"],
+  "Minnesota":      ["Minneapolis","St. Paul","Rochester","Duluth","Bloomington","Brooklyn Park","Plymouth","St. Cloud","Eagan","Woodbury"],
+  "Mississippi":    ["Jackson","Gulfport","Southaven","Hattiesburg","Biloxi","Meridian","Tupelo","Olive Branch","Horn Lake","Greenville"],
+  "Missouri":       ["Kansas City","St. Louis","Springfield","Columbia","Independence","Lee's Summit","O'Fallon","St. Joseph","St. Charles","Blue Springs"],
+  "Montana":        ["Billings","Missoula","Great Falls","Bozeman","Butte","Helena","Kalispell","Havre","Anaconda","Miles City"],
+  "Nebraska":       ["Omaha","Lincoln","Bellevue","Grand Island","Kearney","Fremont","Hastings","Norfolk","Columbus","Papillion"],
+  "Nevada":         ["Las Vegas","Henderson","Reno","North Las Vegas","Sparks","Carson City","Fernley","Elko","Mesquite","Boulder City"],
+  "New Hampshire":  ["Manchester","Nashua","Concord","Derry","Rochester","Dover","Merrimack","Londonderry","Hudson","Keene"],
+  "New Jersey":     ["Newark","Jersey City","Paterson","Elizabeth","Edison","Woodbridge","Lakewood","Toms River","Hamilton","Trenton"],
+  "New Mexico":     ["Albuquerque","Las Cruces","Rio Rancho","Santa Fe","Roswell","Farmington","South Valley","Clovis","Hobbs","Alamogordo"],
+  "New York":       ["New York City","Buffalo","Rochester","Yonkers","Syracuse","Albany","New Rochelle","Mount Vernon","Schenectady","Utica"],
+  "North Carolina": ["Charlotte","Raleigh","Greensboro","Durham","Winston-Salem","Fayetteville","Cary","Wilmington","High Point","Concord"],
+  "North Dakota":   ["Fargo","Bismarck","Grand Forks","Minot","West Fargo","Williston","Mandan","Dickinson","Wahpeton","Devils Lake"],
+  "Ohio":           ["Columbus","Cleveland","Cincinnati","Toledo","Akron","Dayton","Parma","Canton","Youngstown","Lorain"],
+  "Oklahoma":       ["Oklahoma City","Tulsa","Norman","Broken Arrow","Edmond","Lawton","Moore","Midwest City","Enid","Stillwater"],
+  "Oregon":         ["Portland","Eugene","Salem","Gresham","Hillsboro","Beaverton","Bend","Medford","Springfield","Corvallis"],
+  "Pennsylvania":   ["Philadelphia","Pittsburgh","Allentown","Erie","Reading","Scranton","Bethlehem","Lancaster","Harrisburg","Altoona"],
+  "Rhode Island":   ["Providence","Cranston","Warwick","Pawtucket","East Providence","Woonsocket","Coventry","Cumberland","North Providence","South Kingstown"],
+  "South Carolina": ["Columbia","Charleston","North Charleston","Mount Pleasant","Rock Hill","Greenville","Summerville","Goose Creek","Hilton Head","Myrtle Beach"],
+  "South Dakota":   ["Sioux Falls","Rapid City","Aberdeen","Brookings","Watertown","Mitchell","Yankton","Pierre","Huron","Vermillion"],
+  "Tennessee":      ["Nashville","Memphis","Knoxville","Chattanooga","Clarksville","Murfreesboro","Franklin","Jackson","Johnson City","Bartlett"],
+  "Texas":          ["Houston","San Antonio","Dallas","Austin","Fort Worth","El Paso","Arlington","Corpus Christi","Plano","Laredo"],
+  "Utah":           ["Salt Lake City","West Valley City","Provo","West Jordan","Orem","Sandy","Ogden","St. George","Layton","Taylorsville"],
+  "Vermont":        ["Burlington","South Burlington","Rutland","Barre","Montpelier","Winooski","St. Albans","Newport","Vergennes","Middlebury"],
+  "Virginia":       ["Virginia Beach","Norfolk","Chesapeake","Richmond","Newport News","Alexandria","Hampton","Roanoke","Portsmouth","Suffolk"],
+  "Washington":     ["Seattle","Spokane","Tacoma","Vancouver","Bellevue","Kent","Everett","Renton","Spokane Valley","Kirkland"],
+  "West Virginia":  ["Charleston","Huntington","Morgantown","Parkersburg","Wheeling","Weirton","Fairmont","Martinsburg","Beckley","Clarksburg"],
+  "Wisconsin":      ["Milwaukee","Madison","Green Bay","Kenosha","Racine","Appleton","Waukesha","Oshkosh","Eau Claire","Janesville"],
+  "Wyoming":        ["Cheyenne","Casper","Laramie","Gillette","Rock Springs","Sheridan","Green River","Evanston","Riverton","Cody"]
+};
+
+// ─── 30 BUSINESS TYPES ───────────────────────────────────────────────────
+// 18 provided + 12 high-value picks for AI automation outreach
+const BUSINESS_TYPES = [
+  // Your 18
+  "E-Commerce Brands",
+  "Real Estate Agencies",
+  "Restaurants",
+  "Fitness Centers",
+  "Healthcare Clinics",
+  "Educational Institutions",
+  "Technology Startups",
+  "Hotels",
+  "Event Management Companies",
+  "Fashion Brands",
+  "Skincare Brands",
+  "Financial Services Firms",
+  "Law Firms",
+  "Recruitment Agencies",
+  "Nonprofit Organizations",
+  "Automobile Dealerships",
+  "Interior Design Firms",
+  "Home Services Businesses",
+  // 12 additional (high AI automation potential)
+  "Marketing Agencies",
+  "Insurance Agencies",
+  "Dental Practices",
+  "Veterinary Clinics",
+  "Accounting Firms",
+  "Property Management Companies",
+  "Mortgage Brokers",
+  "Travel Agencies",
+  "Solar Energy Companies",
+  "Landscaping & Lawn Care",
+  "Photography & Videography Studios",
+  "Logistics & Trucking Companies"
+];
+
+// ─── POPULATE DROPDOWNS ──────────────────────────────────────────────────
+function populateSelects() {
+  const stateEl = document.getElementById("stateSelect");
+  Object.keys(USA_DATA).sort().forEach(state => {
+    const o = document.createElement("option");
+    o.value = state; o.textContent = state;
+    stateEl.appendChild(o);
+  });
+
+  const bizEl = document.getElementById("businessSelect");
+  BUSINESS_TYPES.forEach(b => {
+    const o = document.createElement("option");
+    o.value = b; o.textContent = b;
+    bizEl.appendChild(o);
+  });
+}
+
+function populateCities() {
+  const state  = document.getElementById("stateSelect").value;
+  const cityEl = document.getElementById("citySelect");
+  cityEl.innerHTML = "";
+
+  if (!state) {
+    cityEl.innerHTML = '<option value="">Select state first</option>';
+    return;
+  }
+
+  cityEl.innerHTML = '<option value="">Select city</option>';
+  (USA_DATA[state] || []).forEach(city => {
+    const o = document.createElement("option");
+    o.value = city; o.textContent = city;
+    cityEl.appendChild(o);
+  });
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────
 function toast(msg, type = "info") {
   const icons = { success:"✓", error:"✕", info:"ℹ" };
   const el = document.createElement("div");
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span>${icons[type]}</span> ${msg}`;
+  el.className = "toast " + type;
+  el.innerHTML = "<span>" + icons[type] + "</span> " + msg;
   document.getElementById("toast-container").appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
@@ -708,26 +391,18 @@ async function login() {
   const email    = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value;
   const btn      = document.getElementById("loginBtn");
-
   if (!email || !password) return toast("Enter email and password", "error");
-
-  btn.disabled = true;
-  btn.textContent = "Signing in…";
-
+  btn.disabled = true; btn.textContent = "Signing in…";
   const { error } = await client.auth.signInWithPassword({ email, password });
   if (error) {
     toast(error.message, "error");
-    btn.disabled = false;
-    btn.textContent = "Sign in";
+    btn.disabled = false; btn.textContent = "Sign in";
     return;
   }
   showApp();
 }
 
-async function logout() {
-  await client.auth.signOut();
-  location.reload();
-}
+async function logout() { await client.auth.signOut(); location.reload(); }
 
 async function checkUser() {
   const { data } = await client.auth.getUser();
@@ -741,18 +416,20 @@ function showApp() {
 
 // ─── INIT ────────────────────────────────────────────────────────────────
 function initCRM() {
-  const loc = document.getElementById("locationSelect").value;
-  const biz = document.getElementById("businessSelect").value;
+  const state = document.getElementById("stateSelect").value;
+  const city  = document.getElementById("citySelect").value;
+  const biz   = document.getElementById("businessSelect").value;
 
-  if (!loc || !biz) return toast("Select both location and business type", "error");
+  if (!state) return toast("Select a state", "error");
+  if (!city)  return toast("Select a city", "error");
+  if (!biz)   return toast("Select a business type", "error");
 
-  selectedLocation = loc;
+  selectedLocation = city + ", " + state;
   selectedBusiness = biz;
   currentPage = 1;
 
   document.getElementById("emptyLanding").style.display = "none";
   document.getElementById("crmSection").style.display   = "flex";
-
   loadLeads();
 }
 
@@ -760,13 +437,10 @@ function initCRM() {
 async function uploadExcel(input) {
   const file = input.files[0];
   if (!file) return;
-
   toast("Parsing file…", "info");
-
   try {
     const wb   = XLSX.read(await file.arrayBuffer());
     const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
     if (!json.length) return toast("File is empty or unreadable", "error");
 
     const rows = json.map(r => ({
@@ -775,27 +449,20 @@ async function uploadExcel(input) {
       email:         (r.email || r.Email || "").toString().trim(),
       location:      selectedLocation,
       business_type: selectedBusiness,
-      status:        "new",
-    })).filter(r => r.phone); // phone is required
+      status:        "new"
+    })).filter(r => r.phone);
 
-    // Chunk into batches of 200
-    const chunks = [];
-    for (let i = 0; i < rows.length; i += 200) chunks.push(rows.slice(i, i + 200));
-
-    for (const chunk of chunks) {
-      const { error } = await client.from("leads").upsert(chunk, { onConflict: "phone" });
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error } = await client.from("leads").upsert(rows.slice(i, i+200), { onConflict:"phone" });
       if (error) throw error;
     }
-
-    toast(`✓ Uploaded ${rows.length} leads`, "success");
+    toast("Uploaded " + rows.length + " leads", "success");
     input.value = "";
     loadLeads();
-  } catch (e) {
-    toast("Upload failed: " + e.message, "error");
-  }
+  } catch(e) { toast("Upload failed: " + e.message, "error"); }
 }
 
-// ─── LOAD LEADS ──────────────────────────────────────────────────────────
+// ─── LOAD ────────────────────────────────────────────────────────────────
 function debounceLoad() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => { currentPage = 1; loadLeads(); }, 350);
@@ -805,24 +472,21 @@ async function loadLeads() {
   const search = document.getElementById("searchBox").value.trim();
   const status = document.getElementById("statusFilter").value;
   const type   = document.getElementById("typeFilter").value;
+  const from   = (currentPage - 1) * PAGE_SIZE;
 
-  const from = (currentPage - 1) * PAGE_SIZE;
-  const to   = from + PAGE_SIZE - 1;
-
-  let query = client
+  let q = client
     .from("leads")
-    .select("*", { count: "exact" })
+    .select("*", { count:"exact" })
     .eq("location", selectedLocation)
     .eq("business_type", selectedBusiness)
-    .order("created_at", { ascending: false })
-    .range(from, to);
+    .order("created_at", { ascending:false })
+    .range(from, from + PAGE_SIZE - 1);
 
-  if (status) query = query.eq("status", status);
-  if (type)   query = query.eq("lead_type", type);
-  if (search) query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+  if (status) q = q.eq("status", status);
+  if (type)   q = q.eq("lead_type", type);
+  if (search) q = q.or("name.ilike.%" + search + "%,phone.ilike.%" + search + "%,email.ilike.%" + search + "%");
 
-  const { data, error, count } = await query;
-
+  const { data, error, count } = await q;
   if (error) return toast("Failed to load: " + error.message, "error");
 
   totalCount = count || 0;
@@ -837,25 +501,21 @@ async function renderStats() {
     .select("status")
     .eq("location", selectedLocation)
     .eq("business_type", selectedBusiness);
-
   if (!data) return;
-  const counts = { new: 0, contacted: 0, closed: 0 };
-  data.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
-
+  const c = { new:0, contacted:0, closed:0 };
+  data.forEach(r => { if (c[r.status] !== undefined) c[r.status]++; });
   document.getElementById("statTotal").textContent     = data.length;
-  document.getElementById("statNew").textContent       = counts.new;
-  document.getElementById("statContacted").textContent = counts.contacted;
-  document.getElementById("statClosed").textContent    = counts.closed;
+  document.getElementById("statNew").textContent       = c.new;
+  document.getElementById("statContacted").textContent = c.contacted;
+  document.getElementById("statClosed").textContent    = c.closed;
 }
 
 function renderPagination() {
   const bar   = document.getElementById("paginationBar");
   const pages = Math.ceil(totalCount / PAGE_SIZE);
-
   if (pages <= 1) { bar.style.display = "none"; return; }
-
   bar.style.display = "flex";
-  document.getElementById("pageInfo").textContent  = `Page ${currentPage} of ${pages}`;
+  document.getElementById("pageInfo").textContent = "Page " + currentPage + " of " + pages;
   document.getElementById("prevBtn").disabled = currentPage <= 1;
   document.getElementById("nextBtn").disabled = currentPage >= pages;
 }
@@ -870,139 +530,109 @@ function changePage(dir) {
 function renderLeads(data) {
   const container = document.getElementById("leads");
   const empty     = document.getElementById("leadsEmpty");
-
   container.innerHTML = "";
-
-  if (!data.length) {
-    empty.style.display = "flex";
-    return;
-  }
+  if (!data.length) { empty.style.display = "flex"; return; }
   empty.style.display = "none";
 
   data.forEach(l => {
     const card = document.createElement("div");
     card.className = "lead-card";
-    card.id = `card-${l.id}`;
+    card.id = "card-" + l.id;
+    const sc = l.status || "new";
+    const fu = l.follow_up ? l.follow_up.slice(0,16) : "";
 
-    const statusClass = l.status || "new";
-    const followup    = l.follow_up ? l.follow_up.slice(0, 16) : "";
-
-    card.innerHTML = `
-      <div class="lead-top">
-        <div class="lead-info">
-          <div class="lead-name">${esc(l.name) || "Unnamed Lead"}</div>
-          <div class="lead-contacts">
-            <span>📞 ${esc(l.phone) || "—"}</span>
-            ${l.email ? `<span>✉️ ${esc(l.email)}</span>` : ""}
-          </div>
-        </div>
-        <span class="status-badge ${statusClass}">${statusClass}</span>
-      </div>
-
-      <div class="lead-bottom">
-        <div class="lead-fields">
-
-          <div class="field-group">
-            <div class="field-label">Status</div>
-            <select onchange="updateField('${l.id}', 'status', this.value, this)">
-              <option value="new"       ${l.status==='new'?'selected':''}>New</option>
-              <option value="contacted" ${l.status==='contacted'?'selected':''}>Contacted</option>
-              <option value="closed"    ${l.status==='closed'?'selected':''}>Closed</option>
-            </select>
-          </div>
-
-          <div class="field-group">
-            <div class="field-label">Lead Type</div>
-            <select onchange="updateField('${l.id}', 'lead_type', this.value, this)">
-              <option value="cold" ${l.lead_type==='cold'?'selected':''}>Cold</option>
-              <option value="warm" ${l.lead_type==='warm'?'selected':''}>Warm</option>
-              <option value="hot"  ${l.lead_type==='hot'?'selected':''}>Hot</option>
-            </select>
-          </div>
-
-          <div class="field-group">
-            <div class="field-label">Follow-up</div>
-            <input type="datetime-local" value="${followup}"
-              onchange="updateField('${l.id}', 'follow_up', this.value, this)">
-          </div>
-
-          <div class="field-group" style="flex:2;">
-            <div class="field-label">Comment</div>
-            <textarea id="comment-${l.id}" placeholder="Add notes…">${esc(l.comment || '')}</textarea>
-          </div>
-
-        </div>
-
-        <div class="lead-actions">
-          <button class="btn-action copy-phone" onclick="copy('${esc(l.phone)}', 'Phone copied')">
-            📋 Phone
-          </button>
-          ${l.email ? `
-          <button class="btn-action copy-email" onclick="copy('${esc(l.email)}', 'Email copied')">
-            📋 Email
-          </button>
-          <button class="btn-action send-email" onclick="sendEmail('${esc(l.email)}', '${esc(l.name)}')">
-            📤 Email
-          </button>` : ""}
-          <button class="btn-action save" onclick="saveComment('${l.id}')">
-            💾 Save
-          </button>
-        </div>
-      </div>
-    `;
+    card.innerHTML =
+      '<div class="lead-top">' +
+        '<div class="lead-info">' +
+          '<div class="lead-name">' + esc(l.name || "Unnamed Lead") + '</div>' +
+          '<div class="lead-contacts">' +
+            '<span>&#128222; ' + esc(l.phone || "—") + '</span>' +
+            (l.email ? '<span>&#9993;&#65039; ' + esc(l.email) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<span class="status-badge ' + sc + '">' + sc + '</span>' +
+      '</div>' +
+      '<div class="lead-bottom">' +
+        '<div class="lead-fields">' +
+          '<div class="field-group">' +
+            '<div class="field-label">Status</div>' +
+            '<select onchange="updateField(\'' + l.id + '\',\'status\',this.value)">' +
+              '<option value="new"'       + (sc==='new'?       ' selected':'') + '>New</option>' +
+              '<option value="contacted"' + (sc==='contacted'? ' selected':'') + '>Contacted</option>' +
+              '<option value="closed"'    + (sc==='closed'?    ' selected':'') + '>Closed</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="field-group">' +
+            '<div class="field-label">Lead Type</div>' +
+            '<select onchange="updateField(\'' + l.id + '\',\'lead_type\',this.value)">' +
+              '<option value="cold"' + (l.lead_type==='cold'?' selected':'') + '>Cold</option>' +
+              '<option value="warm"' + (l.lead_type==='warm'?' selected':'') + '>Warm</option>' +
+              '<option value="hot"'  + (l.lead_type==='hot'? ' selected':'') + '>Hot</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="field-group">' +
+            '<div class="field-label">Follow-up</div>' +
+            '<input type="datetime-local" value="' + fu + '" onchange="updateField(\'' + l.id + '\',\'follow_up\',this.value)">' +
+          '</div>' +
+          '<div class="field-group" style="flex:2;">' +
+            '<div class="field-label">Comment</div>' +
+            '<textarea id="comment-' + l.id + '" placeholder="Add notes…">' + esc(l.comment || '') + '</textarea>' +
+          '</div>' +
+        '</div>' +
+        '<div class="lead-actions">' +
+          '<button class="btn-action copy-phone" onclick="copy(\'' + esc(l.phone) + '\',\'Phone copied\')">&#128203; Phone</button>' +
+          (l.email ?
+            '<button class="btn-action copy-email" onclick="copy(\'' + esc(l.email) + '\',\'Email copied\')">&#128203; Email</button>' +
+            '<button class="btn-action send-email" onclick="sendEmail(\'' + esc(l.email) + '\',\'' + esc(l.name) + '\')">&#128228; Email</button>'
+          : '') +
+          '<button class="btn-action save" onclick="saveComment(\'' + l.id + '\')">&#128190; Save</button>' +
+        '</div>' +
+      '</div>';
 
     container.appendChild(card);
   });
 }
 
-// ─── UPDATES ─────────────────────────────────────────────────────────────
-async function updateField(id, field, value, el) {
+// ─── FIELD UPDATES ───────────────────────────────────────────────────────
+async function updateField(id, field, value) {
   const { error } = await client.from("leads").update({ [field]: value }).eq("id", id);
   if (error) { toast("Save failed", "error"); return; }
-
-  // Update status badge if status changed
   if (field === "status") {
-    const badge = document.querySelector(`#card-${id} .status-badge`);
-    if (badge) { badge.className = `status-badge ${value}`; badge.textContent = value; }
+    const badge = document.querySelector("#card-" + id + " .status-badge");
+    if (badge) { badge.className = "status-badge " + value; badge.textContent = value; }
     renderStats();
   }
-
-  toast(`Saved`, "success");
+  toast("Saved", "success");
 }
 
 async function saveComment(id) {
-  const val = document.getElementById(`comment-${id}`).value;
+  const val = document.getElementById("comment-" + id).value;
   const { error } = await client.from("leads").update({ comment: val }).eq("id", id);
   if (error) return toast("Save failed", "error");
   toast("Comment saved", "success");
 }
 
 // ─── UTILS ───────────────────────────────────────────────────────────────
-function copy(text, msg = "Copied!") {
-  navigator.clipboard.writeText(text).then(() => toast(msg, "success"));
+function copy(text, msg) {
+  navigator.clipboard.writeText(text).then(() => toast(msg || "Copied!", "success"));
 }
 
 function sendEmail(email, name) {
-  const subject = encodeURIComponent("Following up on our discussion");
-  const body    = encodeURIComponent(`Hi ${name},\n\nThe discussion was wonderful and extremely insightful for me. Here's the Google Meet link as discussed.\n\nLooking forward to connecting!\n\nBest regards`);
-  window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+  const sub  = encodeURIComponent("Following up on our discussion");
+  const body = encodeURIComponent("Hi " + name + ",\n\nThe discussion was wonderful and extremely insightful. Here is the Google Meet link as discussed.\n\nBest regards");
+  window.open("mailto:" + email + "?subject=" + sub + "&body=" + body);
 }
 
 function esc(s) {
   if (s == null) return "";
-  return String(s)
-    .replace(/&/g,"&amp;")
-    .replace(/"/g,"&quot;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;");
+  return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
-// Enter to login
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && document.getElementById("loginScreen").style.display !== "none") login();
 });
 
-// Boot
+populateSelects();
 checkUser();
 </script>
 </body>
