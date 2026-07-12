@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1286,7 +1286,7 @@ function renderLeads(data) {
         '</div>'+
         '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">'+
           '<span class="status-badge '+sc+'">'+sc+'</span>'+
-          '<button class="btn-action call" onclick="startCall('+JSON.stringify(l).replace(/"/g,'&quot;')+')">📞 Call</button>'+
+          '<button class="btn-action call" onclick="onCallButtonClick('+JSON.stringify(l).replace(/"/g,'&quot;')+')">📞 Call</button>'+ /* CHANGED: was startCall(...) — now dials via MicroSIP then opens the call workspace */
           '<button class="btn-action" style="background:#f5f0ff;color:#7c3aed;font-size:11px;padding:6px 10px;" onclick="openHistoryForLead(\''+l.id+'\')">📋</button>'+
         '</div>'+
       '</div>'+
@@ -1678,6 +1678,53 @@ cvs.addEventListener("wheel", e=>{
   drawCanvas();
 },{passive:false});
 window.addEventListener("resize", drawCanvas);
+
+/* ═══════════════════════════════════════════════════════════
+   ▼▼▼ NEW: MICROSIP ONE-CLICK DIALER ▼▼▼
+   Added to replace the old Call button behavior. Clicking the
+   📞 Call button now launches MicroSIP via the Windows `callto:`
+   protocol using the lead's sanitized phone number, in addition
+   to opening the existing call-session workspace below (unchanged).
+═══════════════════════════════════════════════════════════ */
+
+// Sanitizes a raw phone number for use in a callto: URI.
+// Rules:
+//   - Strip spaces, brackets, hyphens, and any other non-numeric characters
+//   - Preserve a leading "+" if present
+//   - If the cleaned number is exactly 10 digits, auto-prepend "+1"
+//   - If it already starts with "+", leave the +<digits> combo unchanged
+function sanitizePhoneForDialing(phone) {
+  if (!phone) return "";
+  const raw = String(phone).trim();
+  const hasPlus = raw.charAt(0) === "+";
+  const digits = raw.replace(/\D/g, ""); // removes spaces, (), -, and any non-numeric chars
+
+  if (hasPlus) return "+" + digits;             // already had "+" → keep as-is, just cleaned
+  if (digits.length === 10) return "+1" + digits; // bare 10-digit US number → assume +1
+
+  return digits; // anything else: return the cleaned digits with no assumptions
+}
+
+// Launches MicroSIP via the Windows callto: protocol, e.g. callto:+12085529886
+function dialWithMicroSIP(phone) {
+  const sanitized = sanitizePhoneForDialing(phone);
+  if (!sanitized) {
+    toast("No phone number on file for this lead", "e");
+    return;
+  }
+  toast("Dialing " + sanitized + " via MicroSIP…", "i");
+  window.location.href = "callto:" + sanitized;
+}
+
+// New handler wired to the 📞 Call button (replaces the direct startCall(...) call).
+// Dials via MicroSIP first, then opens the existing call-session workspace exactly as before.
+// NOTE: named onCallButtonClick (not "callLead") to avoid colliding with the existing
+// global `let callLead` state variable used elsewhere in the call-session code.
+function onCallButtonClick(lead) {
+  dialWithMicroSIP(lead && lead.phone);
+  startCall(lead);
+}
+/* ▲▲▲ END NEW: MICROSIP ONE-CLICK DIALER ▲▲▲ */
 
 /* ═══════════════════════════════════════════════════════════
    CALL SESSION
