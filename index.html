@@ -1713,7 +1713,16 @@ function dialWithMicroSIP(phone) {
     return;
   }
   toast("Dialing " + sanitized + " via MicroSIP…", "i");
-  window.location.href = "callto:" + sanitized;
+  // FIX: don't set window.location.href directly — the browser treats that as a real
+  // navigation of the current page and can unload/close the CRM tab once the OS hands
+  // off to MicroSIP. Firing the callto: link via a hidden, temporary <a> click invokes
+  // the OS protocol handler without navigating the current document, so the CRM stays open.
+  const dialLink = document.createElement("a");
+  dialLink.href = "callto:" + sanitized;
+  dialLink.style.display = "none";
+  document.body.appendChild(dialLink);
+  dialLink.click();
+  document.body.removeChild(dialLink);
 }
 
 // New handler wired to the 📞 Call button (replaces the direct startCall(...) call).
