@@ -147,6 +147,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .btn-action{display:flex;align-items:center;gap:4px;padding:6px 10px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);}
 .btn-action.cp{background:#eff6ff;color:#2563eb}.btn-action.ce{background:#f0fdf4;color:#16a34a}.btn-action.se{background:#fff7ed;color:#c2410c}.btn-action.sv{background:var(--navy);color:#fff}.btn-action.call{background:var(--green);color:#fff;font-size:12px;padding:7px 14px;}
 .btn-action:hover{filter:brightness(.92);}
+.btn-action.website{background:var(--cyan);color:#fff;font-size:12px;padding:7px 14px;}
+.btn-action.no-website{font-size:12px;padding:7px 14px;cursor:default;color:#fff;animation:flashNoWebsite 1s infinite;}
+.btn-action.no-website:hover{filter:none;}
+@keyframes flashNoWebsite{0%,100%{background:var(--red);}50%{background:#fca5a5;}}
 
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 0 4px;font-size:13px;color:var(--muted);}
 .page-btn{padding:5px 12px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-size:13px;font-family:var(--font);}
@@ -1288,6 +1292,10 @@ function renderLeads(data) {
         '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">'+
           '<span class="status-badge '+sc+'">'+sc+'</span>'+
           '<button class="btn-action call" onclick="onCallButtonClick('+JSON.stringify(l).replace(/"/g,'&quot;')+')">📞 Call</button>'+ /* CHANGED: was startCall(...) — now dials via MicroSIP then opens the call workspace */
+          (l.website
+            ? '<button class="btn-action website" data-url="'+esc(l.website)+'" onclick="openWebsite(this.dataset.url)">🌐 Website</button>'
+            : '<button class="btn-action no-website" title="No website on file for this lead">⚠️ No Website</button>'
+          )+
           '<button class="btn-action" style="background:#f5f0ff;color:#7c3aed;font-size:11px;padding:6px 10px;" onclick="openHistoryForLead(\''+l.id+'\')">📋</button>'+
         '</div>'+
       '</div>'+
@@ -1353,6 +1361,7 @@ async function uploadExcel(input) {
       name:(r.name||r.Name||"").toString().trim(),
       phone:(r.phone||r.Phone||"").toString().trim(),
       email:(r.email||r.Email||"").toString().trim(),
+      website:(r.website||r.Website||"").toString().trim(),
       location:selLocation, business_type:selBusiness, status:"new"
     })).filter(r=>r.phone);
     // Dedupe by phone — Postgres upsert fails with
@@ -2245,6 +2254,15 @@ function sendEmail(email, name) {
   window.open("mailto:"+email+"?subject="+s+"&body="+b);
 }
 
+// Opens a lead's website in a new tab, adding https:// if the
+// stored value is a bare domain (e.g. "example.com").
+function openWebsite(url) {
+  if(!url) return;
+  let u = url.trim();
+  if(!/^https?:\/\//i.test(u)) u = "https://" + u;
+  window.open(u, "_blank", "noopener,noreferrer");
+}
+
 function esc(s) {
   if(s==null) return "";
   return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -2316,7 +2334,7 @@ function switchMobileCallTab(section, el){
 
 // Override switchPanel to also update mobile bottom nav
 const _origSwitchPanel = switchPanel;
-function switchPanel(name){
+switchPanel = function(name){
   _origSwitchPanel(name);
   // Update mobile bottom nav highlights
   ["leads","tree","stats"].forEach(p=>{
@@ -2331,7 +2349,7 @@ function switchPanel(name){
 
 // Override startCall to init mobile call tabs
 const _origStartCall = startCall;
-async function startCall(lead){
+startCall = async function(lead){
   await _origStartCall(lead);
   if(isMobile()){
     // Default to objections tab
@@ -2356,7 +2374,7 @@ function populateMobileSelects(){
 
 // Auto-switch response tab on mobile when objection selected
 const _origSelectCallNode = selectCallNode;
-async function selectCallNode(id){
+selectCallNode = async function(id){
   await _origSelectCallNode(id);
   if(isMobile()){
     document.querySelectorAll(".call-left,.call-center,.call-right").forEach(s=>s.classList.remove("mob-active"));
@@ -2449,6 +2467,12 @@ CREATE POLICY "own_resp"     ON node_responses     USING (auth.uid()=user_id) WI
 CREATE POLICY "own_versions" ON node_versions      USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
 CREATE POLICY "own_analytics"ON node_analytics     USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
 CREATE POLICY "own_sessions" ON call_sessions      USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
+
+-- ═══════════════════════════════════════════════════════════
+-- WEBSITE COLUMN — run this once in your Supabase SQL editor
+-- to add website support to your existing "leads" table
+-- ═══════════════════════════════════════════════════════════
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS website TEXT DEFAULT '';
 
 -- ═══════════════════════════════════════════════════════════ -->
 </body>
