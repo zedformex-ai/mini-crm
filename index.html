@@ -1349,17 +1349,26 @@ async function uploadExcel(input) {
     const wb   = XLSX.read(await file.arrayBuffer());
     const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     if(!json.length) return toast("Empty file","e");
-    const rows = json.map(r=>({
+    const rawRows = json.map(r=>({
       name:(r.name||r.Name||"").toString().trim(),
       phone:(r.phone||r.Phone||"").toString().trim(),
       email:(r.email||r.Email||"").toString().trim(),
       location:selLocation, business_type:selBusiness, status:"new"
     })).filter(r=>r.phone);
+    // Dedupe by phone — Postgres upsert fails with
+    // "ON CONFLICT DO UPDATE command cannot affect row a second time"
+    // if the same conflict key (phone) appears twice in one batch.
+    // Keep the LAST occurrence of each phone number so the most
+    // recently listed info for that number wins.
+    const dedupedMap = new Map();
+    rawRows.forEach(r=>dedupedMap.set(r.phone, r));
+    const rows = Array.from(dedupedMap.values());
+    const dupeCount = rawRows.length - rows.length;
     for(let i=0;i<rows.length;i+=200){
       const {error}=await db.from("leads").upsert(rows.slice(i,i+200),{onConflict:"phone"});
       if(error) throw error;
     }
-    toast("Uploaded "+rows.length+" leads","s");
+    toast("Uploaded "+rows.length+" leads"+(dupeCount?" ("+dupeCount+" duplicate phone numbers skipped)":""),"s");
     input.value=""; loadLeads();
   } catch(e){toast("Upload failed: "+e.message,"e");}
 }
