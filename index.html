@@ -503,7 +503,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .stat-pill{padding:5px 10px;font-size:12px;flex-shrink:0;}
 
   /* Search + filter row */
-  .controls{padding:8px 12px;gap:6px;flex-wrap:nowrap;flex-shrink:0;}
+  .controls{padding:8px 12px;gap:6px;flex-wrap:wrap;flex-shrink:0;}
   .search-wrap input{font-size:14px;padding:10px 10px 10px 32px;}
   .controls select{font-size:12px;padding:10px 8px;min-width:0;}
 
@@ -757,6 +757,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <option value="warm">Warm</option>
             <option value="hot">Hot</option>
           </select>
+          <select id="websiteFilter" onchange="loadLeads()">
+            <option value="">All Leads</option>
+            <option value="yes">Website</option>
+            <option value="no">No Website</option>
+          </select>
         </div>
 
         <div class="leads-area" id="leadsArea">
@@ -766,11 +771,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
             <span>Adjust filters or upload an Excel file</span>
           </div>
           <div id="leads"></div>
-          <div class="pagination" id="paginationBar" style="display:none;">
-            <button class="page-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
-            <span id="pageInfo">Page 1</span>
-            <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
-          </div>
         </div>
       </div>
     </div>
@@ -1076,7 +1076,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 ═══════════════════════════════════════════════════════════ */
 const SUPA_URL  = "https://vdyelzvodduuzmmlocnp.supabase.co";
 const SUPA_KEY  = "sb_publishable_NQQMb3N8talO7hIHPzcYnw_wzaCh2YW";
-const PAGE_SIZE = 30;
+const FETCH_BATCH = 1000; // internal chunk size used to page through Supabase's per-request row cap while building one continuous list
 const db        = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 /* ═══════════════════════════════════════════════════════════
@@ -1085,7 +1085,6 @@ const db        = supabase.createClient(SUPA_URL, SUPA_KEY);
 let currentUser     = null;
 let selLocation     = null;
 let selBusiness     = null;
-let currentPage     = 1;
 let totalCount      = 0;
 let searchTimer     = null;
 
@@ -1209,7 +1208,6 @@ function initCRM() {
   if (!biz)   return toast("Select a business type","e");
   selLocation = city + ", " + state;
   selBusiness = biz;
-  currentPage = 1;
   document.getElementById("emptyLanding").style.display = "none";
   document.getElementById("crmSection").style.display   = "flex";
   loadLeads();
@@ -1217,29 +1215,51 @@ function initCRM() {
 
 function debounceLoad() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { currentPage=1; loadLeads(); }, 320);
+  searchTimer = setTimeout(loadLeads, 320);
 }
 
+// Loads every matching lead (not just one page) and renders them as a single
+// continuous list. Supabase caps each request at ~1000 rows, so this pages
+// through the results internally in the background and stitches them together
+// before rendering anything, giving one uninterrupted scroll list on screen.
 async function loadLeads() {
-  const search = document.getElementById("searchBox").value.trim();
-  const status = document.getElementById("statusFilter").value;
-  const type   = document.getElementById("typeFilter").value;
-  const from   = (currentPage-1)*PAGE_SIZE;
+  const search  = document.getElementById("searchBox").value.trim();
+  const status  = document.getElementById("statusFilter").value;
+  const type    = document.getElementById("typeFilter").value;
+  const website = document.getElementById("websiteFilter").value;
 
-  let q = db.from("leads").select("*",{count:"exact"})
-    .eq("location",selLocation).eq("business_type",selBusiness)
-    .order("created_at",{ascending:false}).range(from,from+PAGE_SIZE-1);
+  document.getElementById("leads").innerHTML = "";
+  document.getElementById("leadsEmpty").style.display = "none";
+  document.getElementById("leads").innerHTML = '<div class="state-msg" style="height:120px;"><p>Loading leads…</p></div>';
 
-  if(status) q = q.eq("status",status);
-  if(type)   q = q.eq("lead_type",type);
-  if(search) q = q.or("name.ilike.%"+search+"%,phone.ilike.%"+search+"%,email.ilike.%"+search+"%");
+  function buildQuery(from, to) {
+    let q = db.from("leads").select("*",{count:"exact"})
+      .eq("location",selLocation).eq("business_type",selBusiness)
+      .order("created_at",{ascending:false}).range(from,to);
+    if(status)  q = q.eq("status",status);
+    if(type)    q = q.eq("lead_type",type);
+    if(website==="yes") q = q.not("website","is",null).neq("website","");
+    if(website==="no")  q = q.or("website.is.null,website.eq.");
+    if(search)  q = q.or("name.ilike.%"+search+"%,phone.ilike.%"+search+"%,email.ilike.%"+search+"%");
+    return q;
+  }
 
-  const {data,error,count} = await q;
-  if(error) return toast("Load failed: "+error.message,"e");
-  totalCount = count||0;
-  renderLeads(data||[]);
+  let allData = [];
+  let from    = 0;
+  let total   = 0;
+
+  while (true) {
+    const {data,error,count} = await buildQuery(from, from+FETCH_BATCH-1);
+    if(error) return toast("Load failed: "+error.message,"e");
+    if(typeof count === "number") total = count;
+    allData = allData.concat(data||[]);
+    if(!data || data.length < FETCH_BATCH) break;
+    from += FETCH_BATCH;
+  }
+
+  totalCount = total;
+  renderLeads(allData);
   renderStats();
-  renderPagination();
 }
 
 async function renderStats() {
@@ -1253,18 +1273,6 @@ async function renderStats() {
   document.getElementById("statContacted").textContent = c.contacted;
   document.getElementById("statClosed").textContent    = c.closed;
 }
-
-function renderPagination() {
-  const bar   = document.getElementById("paginationBar");
-  const pages = Math.ceil(totalCount/PAGE_SIZE);
-  if(pages<=1){bar.style.display="none";return;}
-  bar.style.display="flex";
-  document.getElementById("pageInfo").textContent = "Page "+currentPage+" of "+pages;
-  document.getElementById("prevBtn").disabled = currentPage<=1;
-  document.getElementById("nextBtn").disabled = currentPage>=pages;
-}
-
-function changePage(dir) { currentPage+=dir; loadLeads(); document.getElementById("leadsArea").scrollTop=0; }
 
 function renderLeads(data) {
   const con   = document.getElementById("leads");
@@ -2300,7 +2308,6 @@ function initCRMMobile(){
   if(!biz)   return toast("Select a business type","e");
   selLocation = city+", "+state;
   selBusiness = biz;
-  currentPage = 1;
   document.getElementById("mobileFilterDrawer").classList.remove("open");
   document.getElementById("emptyLanding").style.display="none";
   document.getElementById("crmSection").style.display="flex";
