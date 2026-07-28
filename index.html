@@ -2603,16 +2603,46 @@ CREATE TABLE IF NOT EXISTS call_sessions (
 
 -- Row Level Security
 ALTER TABLE conversation_nodes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE node_responses     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE node_versions      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE node_analytics     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE call_sessions      ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "own_nodes"    ON conversation_nodes USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
-CREATE POLICY "own_resp"     ON node_responses     USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
 CREATE POLICY "own_versions" ON node_versions      USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
 CREATE POLICY "own_analytics"ON node_analytics     USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
 CREATE POLICY "own_sessions" ON call_sessions      USING (auth.uid()=user_id) WITH CHECK (auth.uid()=user_id);
+
+-- ═══════════════════════════════════════════════════════════
+-- MIGRATING AN EXISTING DATABASE (skip this if setting up fresh)
+-- Upgrades the old flat "client objection → node_responses" model
+-- to the new infinite-depth tree with zero data loss: every old
+-- "client" node becomes a Prospect root, and its old responses
+-- become "Me" children of that root. Run once, in order.
+-- ═══════════════════════════════════════════════════════════
+
+-- 1. Add the new tree columns
+ALTER TABLE conversation_nodes ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES conversation_nodes(id) ON DELETE CASCADE;
+ALTER TABLE conversation_nodes ADD COLUMN IF NOT EXISTS speaker TEXT;
+
+-- 2. Backfill speaker from the old node_type column
+UPDATE conversation_nodes SET speaker = 'prospect' WHERE node_type = 'client' AND speaker IS NULL;
+UPDATE conversation_nodes SET speaker = 'me'       WHERE node_type IN ('response','note') AND speaker IS NULL;
+UPDATE conversation_nodes SET speaker = 'prospect' WHERE speaker IS NULL; -- fallback for any other rows
+
+-- 3. Migrate old flat responses into the tree as "Me" children of their objection node
+INSERT INTO conversation_nodes (user_id, parent_id, speaker, content, category, tags, notes, confidence_score, archived, active, created_at)
+SELECT r.user_id, r.node_id, 'me', r.content, 'other', '', '', 5, false, true, r.created_at
+FROM node_responses r;
+
+-- 4. Lock speaker in as required, matching the fresh-install schema above
+ALTER TABLE conversation_nodes ALTER COLUMN speaker SET NOT NULL;
+ALTER TABLE conversation_nodes ADD CONSTRAINT conversation_nodes_speaker_check CHECK (speaker IN ('me','prospect'));
+CREATE INDEX IF NOT EXISTS conversation_nodes_parent_idx ON conversation_nodes(parent_id);
+
+-- 5. Optional cleanup — only run these once you've confirmed the app
+--    works correctly against the migrated data above.
+-- ALTER TABLE conversation_nodes DROP COLUMN IF EXISTS node_type;
+-- DROP TABLE IF EXISTS node_responses;
 
 -- ═══════════════════════════════════════════════════════════
 -- WEBSITE COLUMN — run this once in your Supabase SQL editor
