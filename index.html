@@ -302,6 +302,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .add-resp-row{display:flex;gap:8px;}
 .add-resp-row input{flex:1;background:var(--navy3);border:1px solid #2a4060;color:#fff;padding:8px 12px;border-radius:7px;font-size:13px;font-family:var(--font);outline:none;}
 .add-resp-row input:focus{border-color:var(--blue);}
+.add-resp-row select{background:var(--navy3);border:1px solid #2a4060;color:#fff;padding:8px 10px;border-radius:7px;font-size:12px;font-family:var(--font);outline:none;cursor:pointer;}
+.add-resp-row select:focus{border-color:var(--blue);}
 .add-resp-row button{background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
 
 /* RIGHT: notes + path */
@@ -692,9 +694,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
     <div class="sidebar-body hidden" id="sidebar-tree">
       <div class="sidebar-label">Tree Actions</div>
-      <button class="btn-load" onclick="openNodeModal(null)" style="margin-top:0;">+ New Node <span style="opacity:.6;font-size:11px;">Ctrl+N</span></button>
+      <button class="btn-load" onclick="openNodeModal(null)" style="margin-top:0;">+ New Root Node <span style="opacity:.6;font-size:11px;">Ctrl+N</span></button>
       <div style="margin-top:12px;font-size:12px;color:#4a6a90;line-height:1.6;">
-        Click any node in the list to view details.<br>Use the canvas to drag &amp; explore the tree.
+        Click any node to view &amp; edit it. Use "+ Add Child" inside a node to build out replies. Drag the canvas to pan, scroll to zoom.
       </div>
     </div>
 
@@ -781,8 +783,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <!-- Node list sidebar -->
         <div class="tree-sidebar">
           <div class="tree-sidebar-header">
-            <h3>Objection Nodes</h3>
-            <button class="btn-sm primary" onclick="openNodeModal(null)" style="font-size:11px;padding:5px 10px;">+ New</button>
+            <h3>Conversation Nodes</h3>
+            <button class="btn-sm primary" onclick="openNodeModal(null)" style="font-size:11px;padding:5px 10px;">+ New Root</button>
           </div>
           <div class="ts-search">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -792,7 +794,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="node-list" id="nodeList">
             <div class="state-msg" style="height:200px;">
               <p style="font-size:13px;">No nodes yet</p>
-              <span>Create your first objection node</span>
+              <span>Create your first root node</span>
             </div>
           </div>
         </div>
@@ -833,9 +835,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
               </div>
             </div>
             <div class="nd-section">
-              <div class="nd-section-title">Responses</div>
+              <div class="nd-section-title">Child Replies</div>
               <div class="response-list" id="ndResponseList"></div>
-              <button class="call-add-node" style="margin:8px 0 0;width:100%;" onclick="addResponseToCurrentNode()">+ Add Response</button>
+              <button class="call-add-node" style="margin:8px 0 0;width:100%;" onclick="addChildToCurrentNode()">+ Add Child</button>
             </div>
             <div class="nd-section">
               <div class="nd-section-title">Tags</div>
@@ -852,6 +854,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           </div>
           <div class="nd-footer">
             <button class="btn-sm primary" onclick="startCallWithNode(currentNode)">Use in Call</button>
+            <button class="btn-sm" style="background:var(--red);color:#fff;margin-left:auto;" onclick="deleteNode(currentNode)">🗑 Delete Node</button>
           </div>
         </div>
       </div>
@@ -916,42 +919,46 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
     <!-- MOBILE CALL TABS -->
     <div id="mobileCallTabs">
-      <button class="mct-tab active" onclick="switchMobileCallTab('left',this)">Objections</button>
-      <button class="mct-tab" onclick="switchMobileCallTab('center',this)">Responses</button>
+      <button class="mct-tab active" onclick="switchMobileCallTab('left',this)">Start</button>
+      <button class="mct-tab" onclick="switchMobileCallTab('center',this)">Replies</button>
       <button class="mct-tab" onclick="switchMobileCallTab('notes',this)">Notes</button>
       <button class="mct-tab" onclick="switchMobileCallTab('path',this)">Path</button>
     </div>
     <!-- LEFT: objection picker -->
     <div class="call-left">
       <div class="call-left-header">
-        <h4>Client Says… <span style="color:var(--blue-light);">(Select Objection)</span></h4>
+        <h4>Select Starting Point <span style="color:var(--blue-light);">(Root Node)</span></h4>
         <div class="call-obj-search">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="callObjSearch" placeholder="Search objections…" oninput="filterCallObjList()" autocomplete="off">
+          <input id="callObjSearch" placeholder="Search root nodes…" oninput="filterCallObjList()" autocomplete="off">
           <span class="sh">/</span>
         </div>
       </div>
       <div class="call-obj-list" id="callObjList"></div>
-      <button class="call-add-node" onclick="quickAddObjDuringCall()">+ New Objection (live)</button>
+      <button class="call-add-node" onclick="quickAddObjDuringCall()">+ New Root (live)</button>
     </div>
 
     <!-- CENTER: responses -->
     <div class="call-center">
       <div class="call-center-header">
-        <div class="call-objection-display" id="callObjDisplay">← Select an objection from the left panel</div>
-        <div class="call-objection-sub" id="callObjSub">Press numbers 1–9 to quickly select a response</div>
+        <div class="call-objection-display" id="callObjDisplay">← Select a starting point from the left panel</div>
+        <div class="call-objection-sub" id="callObjSub">Press numbers 1–9 to quickly select the next line</div>
       </div>
       <div class="call-responses-area" id="callResponsesArea">
         <div class="call-no-obj">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <p>No objection selected</p>
+          <p>No starting point selected</p>
           <span style="font-size:12px;color:#4a6a90;">Select one from the left, or search with /</span>
         </div>
       </div>
       <div class="call-add-resp-bar">
-        <div style="font-size:11px;color:#4a6a90;margin-bottom:6px;font-weight:600;">ADD RESPONSE TO SELECTED OBJECTION</div>
+        <div style="font-size:11px;color:#4a6a90;margin-bottom:6px;font-weight:600;">ADD NEXT LINE AFTER THIS ONE</div>
         <div class="add-resp-row">
-          <input id="newRespInput" placeholder="Type your response script…" onkeydown="if(event.key==='Enter')addLiveResponse()">
+          <select id="newRespSpeaker">
+            <option value="prospect">🗣 Prospect</option>
+            <option value="me">💬 Me</option>
+          </select>
+          <input id="newRespInput" placeholder="Type the next line…" onkeydown="if(event.key==='Enter')addLiveResponse()">
           <button onclick="addLiveResponse()">Add</button>
         </div>
       </div>
@@ -995,17 +1002,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 <div id="nodeModal">
   <div class="node-modal-box">
     <div class="node-modal-header">
-      <h3 id="nodeModalTitle">New Objection Node</h3>
+      <h3 id="nodeModalTitle">New Root Node</h3>
       <button class="btn-close-modal" onclick="closeNodeModal()">✕</button>
     </div>
     <div class="node-modal-body">
       <div class="form-row">
-        <label>Node Type</label>
-        <select id="nmType">
-          <option value="client">Client Objection / Statement</option>
-          <option value="response">Your Response</option>
-          <option value="note">Note</option>
+        <label>Speaker <span style="color:var(--red);">*</span></label>
+        <select id="nmSpeaker">
+          <option value="prospect">🗣 Prospect (them)</option>
+          <option value="me">💬 Me (my line)</option>
         </select>
+      </div>
+      <div class="form-row" id="nmParentContextRow" style="display:none;">
+        <label>Replying To</label>
+        <div id="nmParentContext" style="font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px;line-height:1.4;"></div>
       </div>
       <div class="form-row">
         <label>Content <span style="color:var(--red);">*</span></label>
@@ -1054,7 +1064,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="kb-row"><span class="kbd">/</span><span class="kb-desc">Focus search</span></div>
       <div class="kb-row"><span class="kbd">Esc</span><span class="kb-desc">Close modal / overlay</span></div>
       <div class="kb-row"><span class="kbd">Ctrl+N</span><span class="kb-desc">New node</span></div>
-      <div class="kb-row"><span class="kbd">1–9</span><span class="kb-desc">Select response (during call)</span></div>
+      <div class="kb-row"><span class="kbd">1–9</span><span class="kb-desc">Select next line (during call)</span></div>
       <div class="kb-section">Leads</div>
       <div class="kb-row"><span class="kbd">Ctrl+F</span><span class="kb-desc">Focus lead search</span></div>
       <div class="kb-row"><span class="kbd">Ctrl+U</span><span class="kb-desc">Upload Excel</span></div>
@@ -1062,7 +1072,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="kb-row"><span class="kbd">Ctrl+S</span><span class="kb-desc">Save notes</span></div>
       <div class="kb-row"><span class="kbd">Shift+R</span><span class="kb-desc">Open call history</span></div>
       <div class="kb-row"><span class="kbd">Ctrl+Enter</span><span class="kb-desc">Add response</span></div>
-      <div class="kb-row"><span class="kbd">Tab</span><span class="kb-desc">Cycle objections</span></div>
+      <div class="kb-row"><span class="kbd">Tab</span><span class="kb-desc">Cycle root nodes</span></div>
       <div class="kb-section">Tree</div>
       <div class="kb-row"><span class="kbd">↑ ↓</span><span class="kb-desc">Navigate node list</span></div>
       <div class="kb-row"><span class="kbd">Enter</span><span class="kb-desc">Select node</span></div>
@@ -1111,6 +1121,7 @@ let callObjIndex    = 0;     // for Tab cycling
 
 // Node modal state
 let editingNode     = null;
+let pendingParentId = null; // parent to attach a new node to (null = new root)
 
 /* ═══════════════════════════════════════════════════════════
    USA DATA
@@ -1396,7 +1407,7 @@ async function uploadExcel(input) {
 async function loadAllNodes() {
   if(!currentUser) return;
   const {data,error} = await db.from("conversation_nodes")
-    .select("*, node_analytics(*), node_responses(*)")
+    .select("*, node_analytics(*)")
     .eq("user_id", currentUser.id)
     .eq("archived", false)
     .order("created_at",{ascending:false});
@@ -1405,6 +1416,30 @@ async function loadAllNodes() {
   filteredNodes = [...allNodes];
   renderNodeList();
   renderCallObjList();
+}
+
+/* ── Tree helpers (parent/child graph over the flat allNodes list) ── */
+function getChildren(nodeId) {
+  return allNodes.filter(n=>n.parent_id===nodeId)
+    .sort((a,b)=> new Date(a.created_at)-new Date(b.created_at));
+}
+
+function getRootOf(node) {
+  let cur = node;
+  const seen = new Set();
+  while(cur && cur.parent_id && !seen.has(cur.id)) {
+    seen.add(cur.id);
+    const p = allNodes.find(n=>n.id===cur.parent_id);
+    if(!p) break;
+    cur = p;
+  }
+  return cur;
+}
+
+function countDescendants(nodeId) {
+  let count = 0;
+  getChildren(nodeId).forEach(k=>{ count += 1 + countDescendants(k.id); });
+  return count;
 }
 
 function filterNodeList() {
@@ -1431,10 +1466,14 @@ function renderNodeList() {
     const meetings  = analytics.meetings_booked||0;
     const converted = analytics.converted||0;
     const used      = analytics.times_used||0;
-    return '<div class="node-item '+n.node_type+'-type" data-idx="'+i+'" onclick="selectNode(\''+n.id+'\')" tabindex="0">'+
-      '<div class="node-title">'+esc(n.content)+'</div>'+
+    const speakerClass = n.speaker==="prospect" ? "client-type" : "response-type";
+    const icon = n.speaker==="prospect" ? "🗣" : "💬";
+    const rootBadge = n.parent_id ? "" : '<span class="node-tag stat">ROOT</span>';
+    return '<div class="node-item '+speakerClass+'" data-idx="'+i+'" onclick="selectNode(\''+n.id+'\')" tabindex="0">'+
+      '<div class="node-title">'+icon+' '+esc(n.content)+'</div>'+
       '<div class="node-meta">'+
         '<span class="node-tag cat">'+esc(n.category||"other")+'</span>'+
+        rootBadge+
         (used?'<span class="node-stats-mini">'+used+' uses · '+meetings+' mtg</span>':'')+
       '</div>'+
     '</div>';
@@ -1449,10 +1488,11 @@ async function selectNode(id) {
   const {data:versions} = await db.from("node_versions")
     .select("*").eq("node_id",id).order("created_at",{ascending:false}).limit(5);
 
+  const speakerIcon = currentNode.speaker==="prospect" ? "🗣 " : "💬 ";
   document.getElementById("nodeDetail").style.display = "flex";
-  document.getElementById("ndTitle").textContent = currentNode.content.length>40
-    ? currentNode.content.slice(0,40)+"…" : currentNode.content;
-  document.getElementById("canvasTitle").textContent = currentNode.content;
+  document.getElementById("ndTitle").textContent = speakerIcon + (currentNode.content.length>36
+    ? currentNode.content.slice(0,36)+"…" : currentNode.content);
+  document.getElementById("canvasTitle").textContent = speakerIcon + currentNode.content;
   document.getElementById("canvasEmpty").style.display = "none";
 
   // Highlight in list
@@ -1468,21 +1508,25 @@ async function selectNode(id) {
   document.getElementById("ndStatConverted").textContent = analytics.converted||0;
   document.getElementById("ndStatFailed").textContent    = analytics.failed||0;
 
-  // Responses
-  const responses = currentNode.node_responses || [];
+  // Child nodes — the possible next lines in the conversation tree
+  const children = getChildren(currentNode.id);
   const rl = document.getElementById("ndResponseList");
-  if(!responses.length){
-    rl.innerHTML='<div style="font-size:13px;color:var(--muted);">No responses yet. Add one below.</div>';
+  if(!children.length){
+    rl.innerHTML='<div style="font-size:13px;color:var(--muted);">No child replies yet. Add one below.</div>';
   } else {
-    rl.innerHTML = responses.map((r,i)=>{
-      const rate = r.times_used>0 ? Math.round((r.success_count/r.times_used)*100) : 0;
+    rl.innerHTML = children.map((c,i)=>{
+      const a = (c.node_analytics && c.node_analytics[0]) || {};
+      const used = a.times_used||0;
+      const success = (a.meetings_booked||0)+(a.converted||0);
+      const rate = used>0 ? Math.round((success/used)*100) : 0;
       const rateClass = rate>=60?"good":rate>=30?"ok":"bad";
-      return '<div class="response-item" onclick="highlightResponse(this)">'+
+      const icon = c.speaker==="prospect" ? "🗣" : "💬";
+      return '<div class="response-item" onclick="selectNode(\''+c.id+'\')">'+
         '<span class="response-num">'+(i+1)+'</span>'+
-        '<div class="response-text">'+esc(r.content)+'</div>'+
+        '<div class="response-text">'+icon+' '+esc(c.content)+'</div>'+
         '<div class="response-meta">'+
           '<span class="response-rate '+rateClass+'">'+rate+'% success</span>'+
-          '<span style="font-size:11px;color:var(--muted);">'+r.times_used+' uses</span>'+
+          '<span style="font-size:11px;color:var(--muted);">'+used+' uses</span>'+
         '</div>'+
       '</div>';
     }).join("");
@@ -1525,15 +1569,28 @@ function highlightResponse(el) {
 /* ═══════════════════════════════════════════════════════════
    NODE MODAL (Add/Edit)
 ═══════════════════════════════════════════════════════════ */
-function openNodeModal(node) {
+function openNodeModal(node, parentId=null) {
   editingNode = node;
-  document.getElementById("nodeModalTitle").textContent = node ? "Edit Node" : "New Objection Node";
-  document.getElementById("nmType").value      = node?.node_type   || "client";
+  pendingParentId = parentId;
+  const parentNode = parentId ? allNodes.find(n=>n.id===parentId)
+    : (node && node.parent_id ? allNodes.find(n=>n.id===node.parent_id) : null);
+
+  document.getElementById("nodeModalTitle").textContent = node ? "Edit Node" : (parentId ? "New Child Node" : "New Root Node");
+  document.getElementById("nmSpeaker").value   = node?.speaker || (parentNode ? (parentNode.speaker==="prospect"?"me":"prospect") : "prospect");
   document.getElementById("nmContent").value   = node?.content     || "";
-  document.getElementById("nmCategory").value  = node?.category    || "other";
+  document.getElementById("nmCategory").value  = node?.category    || (parentNode?.category || "other");
   document.getElementById("nmTags").value      = node?.tags        || "";
   document.getElementById("nmNotes").value     = node?.notes       || "";
   document.getElementById("nmConfidence").value= node?.confidence_score || 5;
+
+  const ctxRow = document.getElementById("nmParentContextRow");
+  if(parentNode){
+    ctxRow.style.display = "block";
+    document.getElementById("nmParentContext").textContent = (parentNode.speaker==="prospect"?"🗣 ":"💬 ")+parentNode.content;
+  } else {
+    ctxRow.style.display = "none";
+  }
+
   document.getElementById("nodeModal").classList.add("active");
   setTimeout(()=>document.getElementById("nmContent").focus(),100);
 }
@@ -1541,6 +1598,7 @@ function openNodeModal(node) {
 function closeNodeModal() {
   document.getElementById("nodeModal").classList.remove("active");
   editingNode = null;
+  pendingParentId = null;
 }
 
 async function saveNode() {
@@ -1549,7 +1607,8 @@ async function saveNode() {
 
   const payload = {
     user_id:          currentUser.id,
-    node_type:        document.getElementById("nmType").value,
+    parent_id:        editingNode ? editingNode.parent_id : pendingParentId,
+    speaker:          document.getElementById("nmSpeaker").value,
     content,
     category:         document.getElementById("nmCategory").value,
     tags:             document.getElementById("nmTags").value.trim(),
@@ -1573,30 +1632,39 @@ async function saveNode() {
   } else {
     const {error} = await db.from("conversation_nodes").insert(payload);
     if(error) return toast("Save failed: "+error.message,"e");
-    toast("Node created","s");
+    toast(pendingParentId ? "Child node created" : "Root node created","s");
   }
 
   closeNodeModal();
   loadAllNodes();
 }
 
-async function addResponseToCurrentNode() {
+function addChildToCurrentNode() {
   if(!currentNode) return toast("Select a node first","w");
-  const text = prompt("Enter your response script:");
-  if(!text||!text.trim()) return;
-  const {error} = await db.from("node_responses").insert({
-    node_id: currentNode.id, user_id: currentUser.id,
-    content: text.trim(), times_used:0, success_count:0
-  });
-  if(error) return toast("Failed: "+error.message,"e");
-  toast("Response added","s");
-  loadAllNodes().then(()=>selectNode(currentNode.id));
+  openNodeModal(null, currentNode.id);
+}
+
+async function deleteNode(node) {
+  if(!node) return toast("Select a node first","w");
+  const descendants = countDescendants(node.id);
+  const msg = descendants>0
+    ? "Delete this node and its "+descendants+" descendant node(s)? This cannot be undone."
+    : "Delete this node? This cannot be undone.";
+  if(!window.confirm(msg)) return;
+  const {error} = await db.from("conversation_nodes").delete().eq("id",node.id);
+  if(error) return toast("Delete failed: "+error.message,"e");
+  toast("Node deleted","s");
+  closeNodeDetail();
+  await loadAllNodes();
 }
 
 /* ═══════════════════════════════════════════════════════════
-   CANVAS (lightweight 2D tree view)
+   CANVAS — full-depth conversation tree (unlimited children,
+   unlimited depth). Renders the whole tree that the selected
+   node belongs to (walks up to its root, then lays out every
+   descendant at every depth) so every connection is visible.
 ═══════════════════════════════════════════════════════════ */
-const CNODE_W = 200, CNODE_H = 70, CNODE_GAP_X = 240, CNODE_GAP_Y = 100;
+const CNODE_W = 200, CNODE_H = 70, CNODE_GAP_X = 30, CNODE_GAP_Y = 100;
 
 function drawCanvas() {
   const canvas = document.getElementById("treeCanvas");
@@ -1606,41 +1674,68 @@ function drawCanvas() {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  canvasNodes = [];
   if(!currentNode) return;
 
-  canvasNodes = [];
+  const root = getRootOf(currentNode);
+  if(!root) return;
 
-  // Draw selected node + responses as children
+  // ── Recursive layout: every node gets a depth (row) and a center-x,
+  //    computed from its children so parents sit centered above them.
+  const positions = {};
+  let nextX = 0;
+  function measure(node, depth) {
+    const kids = getChildren(node.id);
+    let x;
+    if(!kids.length) {
+      x = nextX;
+      nextX += CNODE_W + CNODE_GAP_X;
+    } else {
+      const xs = kids.map(k=>measure(k, depth+1));
+      x = (xs[0] + xs[xs.length-1]) / 2;
+    }
+    positions[node.id] = {x, depth, node};
+    return x;
+  }
+  measure(root, 0);
+  // Recenter so the root sits at x=0 (canvas center)
+  const rootX = positions[root.id].x;
+  Object.values(positions).forEach(p=>{ p.x -= rootX; });
+
   const cx = canvas.width/2 + canvasOffX;
   const cy = 60 + canvasOffY;
   const scale = canvasScale;
 
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.scale(scale,scale);
+  ctx.scale(scale, scale);
 
-  // Root node
-  const rn = {x:-CNODE_W/2, y:0, w:CNODE_W, h:CNODE_H, type:"root", text:currentNode.content};
-  drawNode(ctx, rn);
-  canvasNodes.push({...rn, nodeId:currentNode.id});
+  // Edges — every parent → child connection in the tree
+  Object.values(positions).forEach(p=>{
+    getChildren(p.node.id).forEach(k=>{
+      const kp = positions[k.id];
+      if(!kp) return;
+      const py = p.depth*(CNODE_H+CNODE_GAP_Y) + CNODE_H;
+      const ky = kp.depth*(CNODE_H+CNODE_GAP_Y);
+      ctx.beginPath();
+      ctx.moveTo(p.x, py);
+      ctx.lineTo(kp.x, ky);
+      ctx.strokeStyle = "rgba(47,127,220,.4)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  });
 
-  // Responses as children
-  const responses = currentNode.node_responses || [];
-  const totalW    = responses.length * (CNODE_W+20) - 20;
-  responses.forEach((r,i)=>{
-    const rx = -totalW/2 + i*(CNODE_W+20);
-    const ry = CNODE_H + CNODE_GAP_Y;
-    // connector line
-    ctx.beginPath();
-    ctx.moveTo(0, CNODE_H);
-    ctx.lineTo(rx + CNODE_W/2, ry);
-    ctx.strokeStyle = "rgba(47,127,220,.4)";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // node
-    const rnode = {x:rx, y:ry, w:CNODE_W, h:CNODE_H, type:"response", text:r.content};
-    drawNode(ctx, rnode);
-    canvasNodes.push({...rnode, responseId:r.id});
+  // Nodes — every node in the tree, clickable
+  Object.values(positions).forEach(p=>{
+    const topY = p.depth*(CNODE_H+CNODE_GAP_Y);
+    const rn = {
+      x: p.x - CNODE_W/2, y: topY, w: CNODE_W, h: CNODE_H,
+      speaker: p.node.speaker, text: p.node.content,
+      selected: currentNode && p.node.id===currentNode.id
+    };
+    drawNode(ctx, rn);
+    canvasNodes.push({...rn, nodeId:p.node.id});
   });
 
   ctx.restore();
@@ -1648,11 +1743,10 @@ function drawCanvas() {
 
 function drawNode(ctx, n) {
   const radius = 8;
-  const colors = {
-    root:     {bg:"#2f7fdc", border:"#1a5fb4", text:"#fff"},
-    response: {bg:"#fff",    border:"#dce4ef", text:"#0f1e35"},
-  };
-  const c = colors[n.type] || colors.response;
+  const isProspect = n.speaker === "prospect";
+  const c = isProspect
+    ? {bg:"#ffffff", border:"#f59e0b", text:"#0f1e35"}
+    : {bg:"#2f7fdc", border:"#1a5fb4", text:"#ffffff"};
 
   // shadow
   ctx.shadowColor="rgba(0,0,0,.12)";
@@ -1665,16 +1759,24 @@ function drawNode(ctx, n) {
   ctx.fill();
   ctx.shadowBlur=0;
 
-  // border
-  ctx.strokeStyle=c.border;
-  ctx.lineWidth=1.5;
+  // border (selected node gets a green highlight ring)
+  ctx.strokeStyle = n.selected ? "#22c55e" : c.border;
+  ctx.lineWidth   = n.selected ? 3 : 1.5;
   ctx.stroke();
+  if(n.selected){
+    ctx.beginPath();
+    ctx.roundRect(n.x-3, n.y-3, n.w+6, n.h+6, radius+3);
+    ctx.strokeStyle = "rgba(34,197,94,.35)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
 
   // text
   ctx.fillStyle=c.text;
   ctx.font="500 12px 'DM Sans', sans-serif";
   ctx.textAlign="center";
-  const words = n.text.split(" ");
+  const icon = isProspect ? "🗣 " : "💬 ";
+  const words = (icon+n.text).split(" ");
   let line="", lines=[];
   words.forEach(w=>{
     const test=line+(line?" ":"")+w;
@@ -1687,17 +1789,39 @@ function drawNode(ctx, n) {
   lines.forEach((l,i)=>ctx.fillText(l, n.x+n.w/2, n.y+n.h/2-totalH/2+i*lh+5));
 }
 
-// Canvas pan/zoom
+// Click-to-select: converts a raw mouse position into tree-space
+// coordinates (undoing pan/zoom) and hit-tests against canvasNodes.
+function handleCanvasClick(clientX, clientY) {
+  const canvas = document.getElementById("treeCanvas");
+  const rect   = canvas.getBoundingClientRect();
+  const mx = clientX-rect.left, my = clientY-rect.top;
+  const cx = canvas.width/2+canvasOffX, cy = 60+canvasOffY;
+  const lx = (mx-cx)/canvasScale, ly = (my-cy)/canvasScale;
+  for(const n of canvasNodes){
+    if(lx>=n.x && lx<=n.x+n.w && ly>=n.y && ly<=n.y+n.h){
+      selectNode(n.nodeId);
+      return;
+    }
+  }
+}
+
+// Canvas pan/zoom + click-to-select node
 const cvs = document.getElementById("treeCanvas");
+let cvsDownX=0, cvsDownY=0, cvsMoved=false;
 cvs.addEventListener("mousedown", e=>{
   isDragging=true; dragStartX=e.clientX-canvasOffX; dragStartY=e.clientY-canvasOffY;
+  cvsDownX=e.clientX; cvsDownY=e.clientY; cvsMoved=false;
   cvs.classList.add("grabbing");
 });
 cvs.addEventListener("mousemove", e=>{
   if(!isDragging) return;
+  if(Math.abs(e.clientX-cvsDownX)>3 || Math.abs(e.clientY-cvsDownY)>3) cvsMoved=true;
   canvasOffX=e.clientX-dragStartX; canvasOffY=e.clientY-dragStartY; drawCanvas();
 });
-cvs.addEventListener("mouseup",   ()=>{ isDragging=false; cvs.classList.remove("grabbing"); });
+cvs.addEventListener("mouseup", e=>{
+  isDragging=false; cvs.classList.remove("grabbing");
+  if(!cvsMoved) handleCanvasClick(e.clientX, e.clientY);
+});
 cvs.addEventListener("mouseleave",()=>{ isDragging=false; cvs.classList.remove("grabbing"); });
 cvs.addEventListener("wheel", e=>{
   e.preventDefault();
@@ -1790,9 +1914,11 @@ async function startCall(lead) {
   document.getElementById("callNotes").value = "";
   document.getElementById("callOutcome").value = "";
   document.getElementById("callPathArea").innerHTML = '<div style="font-size:12px;color:#4a6a90;padding:8px;">Call path will appear here…</div>';
-  document.getElementById("callObjDisplay").textContent = "← Select an objection from the left panel";
-  document.getElementById("callObjSub").textContent    = "Press numbers 1–9 to quickly select a response";
-  document.getElementById("callResponsesArea").innerHTML = '<div class="call-no-obj"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>No objection selected</p></div>';
+  document.getElementById("callObjDisplay").textContent = "← Select a starting point from the left panel";
+  document.getElementById("callObjSub").textContent    = "Press numbers 1–9 to quickly select the next line";
+  document.getElementById("callResponsesArea").innerHTML = '<div class="call-no-obj"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>No starting point selected</p></div>';
+  const rspSel = document.getElementById("newRespSpeaker");
+  if(rspSel) rspSel.value = "prospect";
 
   renderCallObjList();
 
@@ -1814,99 +1940,101 @@ function renderCallObjList(filter="") {
   const el = document.getElementById("callObjList");
   const q  = filter.toLowerCase().trim();
   const nodes = q
-    ? allNodes.filter(n=>n.node_type==="client"&&(
+    ? allNodes.filter(n=>!n.parent_id&&(
         n.content.toLowerCase().includes(q)||
         (n.tags||"").toLowerCase().includes(q)||
         (n.category||"").toLowerCase().includes(q)
       ))
-    : allNodes.filter(n=>n.node_type==="client");
+    : allNodes.filter(n=>!n.parent_id);
 
   el.innerHTML = nodes.map((n,i)=>{
     const analytics=(n.node_analytics&&n.node_analytics[0])||{};
+    const icon = n.speaker==="prospect" ? "🗣" : "💬";
     return '<div class="call-obj-item" data-node-id="'+n.id+'" onclick="selectCallNode(\''+n.id+'\')" tabindex="0">'+
-      '<div class="call-obj-title">'+esc(n.content)+'</div>'+
+      '<div class="call-obj-title">'+icon+' '+esc(n.content)+'</div>'+
       '<div class="call-obj-freq">'+esc(n.category||"")+(analytics.times_used?' · '+analytics.times_used+' encounters':' · 0 encounters')+'</div>'+
     '</div>';
-  }).join("") || '<div style="padding:12px;font-size:13px;color:#4a6a90;">No objections found</div>';
+  }).join("") || '<div style="padding:12px;font-size:13px;color:#4a6a90;">No root nodes found</div>';
 }
 
 function filterCallObjList() {
   renderCallObjList(document.getElementById("callObjSearch").value);
 }
 
+// Advances the live call to any node in the tree (root or descendant),
+// logs it to the call path, and reveals its children as the next
+// possible lines — this is the core "click whichever dialogue the
+// prospect says next" loop described in the spec.
 async function selectCallNode(id) {
   callNodeActive = allNodes.find(n=>n.id===id);
   if(!callNodeActive) return;
 
-  // Highlight
+  // Highlight (only applies when the node is one of the root items shown here)
   document.querySelectorAll(".call-obj-item").forEach(el=>{
     el.classList.toggle("active", el.dataset.nodeId===id);
   });
 
-  document.getElementById("callObjDisplay").textContent = callNodeActive.content;
-  document.getElementById("callObjSub").textContent = "Category: "+(callNodeActive.category||"other")+" · Press 1–9 to select response";
+  const icon = callNodeActive.speaker==="prospect" ? "🗣 " : "💬 ";
+  document.getElementById("callObjDisplay").textContent = icon+callNodeActive.content;
+  document.getElementById("callObjSub").textContent =
+    (callNodeActive.speaker==="prospect"?"Prospect":"Me")+" · "+(callNodeActive.category||"other")+" · Press 1–9 to select the next line";
 
   // Log to path
   const ts = new Date().toISOString();
-  callPath.push({type:"client",text:callNodeActive.content,ts,nodeId:id});
-  appendPathEntry({type:"client",text:callNodeActive.content,ts});
+  callPath.push({type:callNodeActive.speaker,text:callNodeActive.content,ts,nodeId:id});
+  appendPathEntry({type:callNodeActive.speaker,text:callNodeActive.content,ts});
 
   // Increment encounter analytics
   await incrementNodeAnalytic(id,"times_used");
 
-  // Render responses
-  renderCallResponses(callNodeActive.node_responses||[]);
+  // Default the quick-add speaker to whoever would naturally reply next
+  const rspSel = document.getElementById("newRespSpeaker");
+  if(rspSel) rspSel.value = callNodeActive.speaker==="prospect" ? "me" : "prospect";
+
+  // Render this node's children — the possible next lines
+  renderCallResponses(getChildren(id));
 }
 
-function renderCallResponses(responses) {
+function renderCallResponses(nodes) {
   const area = document.getElementById("callResponsesArea");
-  if(!responses.length){
-    area.innerHTML='<div class="call-no-obj"><p style="font-size:13px;color:#4a6a90;">No responses yet for this objection.</p><span style="font-size:12px;color:#4a6a90;">Add one below.</span></div>';
+  if(!nodes.length){
+    area.innerHTML='<div class="call-no-obj"><p style="font-size:13px;color:#4a6a90;">No next lines mapped yet.</p><span style="font-size:12px;color:#4a6a90;">This is the end of the mapped path — add what comes next below.</span></div>';
     return;
   }
-  area.innerHTML = '<div class="call-responses-title">YOUR RESPONSES ('+responses.length+')</div>' +
-    responses.map((r,i)=>{
-      const rate = r.times_used>0?Math.round((r.success_count/r.times_used)*100):0;
+  area.innerHTML = '<div class="call-responses-title">POSSIBLE NEXT LINES ('+nodes.length+')</div>' +
+    nodes.map((n,i)=>{
+      const a = (n.node_analytics&&n.node_analytics[0])||{};
+      const used = a.times_used||0;
+      const success = (a.meetings_booked||0)+(a.converted||0);
+      const rate = used>0?Math.round((success/used)*100):0;
       const rc   = rate>=60?"good":rate>=30?"ok":"bad";
-      return '<div class="call-response-card" id="crc-'+r.id+'" onclick="useResponse(\''+r.id+'\',\''+esc(r.content)+'\')">'+
+      const icon = n.speaker==="prospect" ? "🗣" : "💬";
+      return '<div class="call-response-card" id="crc-'+n.id+'" onclick="useResponse(\''+n.id+'\')">'+
         '<span class="call-response-num">'+(i+1)+'</span>'+
-        '<div class="call-response-text">'+esc(r.content)+'</div>'+
+        '<div class="call-response-text">'+icon+' '+esc(n.content)+'</div>'+
         '<div class="call-response-meta">'+
           '<span class="crate '+rc+'">'+rate+'% success</span>'+
-          '<span style="font-size:11px;color:#4a6a90;">'+r.times_used+' times used</span>'+
+          '<span style="font-size:11px;color:#4a6a90;">'+used+' times used</span>'+
         '</div>'+
       '</div>';
     }).join("");
 }
 
-async function useResponse(responseId, text) {
-  // Highlight card
-  document.querySelectorAll(".call-response-card").forEach(c=>c.classList.remove("used-now"));
-  const card = document.getElementById("crc-"+responseId);
-  if(card) card.classList.add("used-now");
-
-  // Log to path
-  const ts = new Date().toISOString();
-  callPath.push({type:"response",text,ts,responseId,nodeId:callNodeActive?.id});
-  appendPathEntry({type:"response",text,ts});
-
-  // Increment response usage
-  await db.from("node_responses").update({
-    times_used: db.rpc ? undefined : null
-  }).eq("id",responseId);
-  // Simple increment via raw update:
-  const {data:resp} = await db.from("node_responses").select("times_used").eq("id",responseId).single();
-  if(resp) await db.from("node_responses").update({times_used:(resp.times_used||0)+1}).eq("id",responseId);
-
-  toast("Response selected · Logged","s");
+// Selecting a next-line card advances the call to that node (which
+// then reveals ITS children), so the tree can be walked to any depth.
+async function useResponse(nodeId) {
+  await selectCallNode(nodeId);
 }
 
 function appendPathEntry(entry) {
   const area = document.getElementById("callPathArea");
   const el   = document.createElement("div");
-  el.className = "path-entry "+(entry.type==="response"?"response-path":"");
+  // "client"/"response" are legacy values from call sessions logged
+  // before the tree model; "prospect"/"me" are the current speaker values.
+  const isProspect = entry.type==="prospect" || entry.type==="client";
+  el.className = "path-entry "+(isProspect?"":"response-path");
   el.innerHTML =
-    '<div class="path-text">'+(entry.type==="client"?"🗣 ":"💬 ")+esc(entry.text)+'</div>'+
+    '<div class="path-text">'+(isProspect?"🗣 ":"💬 ")+esc(entry.text)+'</div>'+
     '<div class="path-time">'+new Date(entry.ts).toLocaleTimeString()+'</div>';
   // Remove placeholder
   if(area.querySelector("[style]")) area.innerHTML="";
@@ -1982,35 +2110,41 @@ function startCallWithNode(node) {
   selectCallNode(node.id);
 }
 
-/* Quick add objection during live call */
+/* Quick add a brand-new root dialogue during a live call */
 async function quickAddObjDuringCall() {
-  const text = prompt("New client objection (will be instantly added to master tree):");
+  const text = prompt("New root dialogue (prospect's opening line or objection) — will be added to the tree:");
   if(!text||!text.trim()) return;
   const {error} = await db.from("conversation_nodes").insert({
-    user_id:currentUser.id, node_type:"client",
+    user_id:currentUser.id, parent_id:null, speaker:"prospect",
     content:text.trim(), category:"other",
     active:true, archived:false, confidence_score:5,
   });
   if(error) return toast("Failed: "+error.message,"e");
-  toast("Objection added to master tree","s");
+  toast("Root node added to tree","s");
   await loadAllNodes();
   renderCallObjList(document.getElementById("callObjSearch").value);
 }
 
+// Adds a new child node under whatever node the call is currently on,
+// so an unanticipated line can be mapped into the tree mid-call.
 async function addLiveResponse() {
-  if(!callNodeActive) return toast("Select an objection first","w");
+  if(!callNodeActive) return toast("Select a starting point first","w");
   const text = document.getElementById("newRespInput").value.trim();
-  if(!text) return toast("Enter a response","e");
-  const {error} = await db.from("node_responses").insert({
-    node_id:callNodeActive.id, user_id:currentUser.id,
-    content:text, times_used:0, success_count:0
+  if(!text) return toast("Enter a line","e");
+  const speaker = document.getElementById("newRespSpeaker")?.value
+    || (callNodeActive.speaker==="prospect" ? "me" : "prospect");
+  const {error} = await db.from("conversation_nodes").insert({
+    user_id:currentUser.id, parent_id:callNodeActive.id, speaker,
+    content:text, category:callNodeActive.category||"other",
+    tags:"", notes:"", confidence_score:5,
+    archived:false, active:true
   });
   if(error) return toast("Failed: "+error.message,"e");
   document.getElementById("newRespInput").value="";
-  toast("Response added","s");
+  toast("Line added","s");
   await loadAllNodes();
   const refreshed = allNodes.find(n=>n.id===callNodeActive.id);
-  if(refreshed) { callNodeActive=refreshed; renderCallResponses(refreshed.node_responses||[]); }
+  if(refreshed) { callNodeActive=refreshed; renderCallResponses(getChildren(refreshed.id)); }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2043,7 +2177,7 @@ async function loadHistoryModal(leadId, title) {
 
   document.getElementById("historyBody").innerHTML = data.map(s=>{
     const path   = JSON.parse(s.path_json||"[]");
-    const preview= path.slice(0,3).map(p=>(p.type==="client"?"🗣 ":"💬 ")+p.text.slice(0,40)).join(" → ");
+    const preview= path.slice(0,3).map(p=>((p.type==="client"||p.type==="prospect")?"🗣 ":"💬 ")+p.text.slice(0,40)).join(" → ");
     const dur    = s.duration_seconds ? Math.floor(s.duration_seconds/60)+"m "+Math.floor(s.duration_seconds%60)+"s" : "—";
     const oc     = s.outcome||"noanswer";
     return '<div class="session-card" id="sc-'+s.id+'">'+
@@ -2071,7 +2205,7 @@ function toggleReplay(sessionId, pathJson) {
   else {
     rv.innerHTML = path.map((step,i)=>
       '<div class="replay-step">'+
-        '<div class="replay-icon '+(step.type==="client"?"c":"r")+'">'+(step.type==="client"?"🗣":"💬")+'</div>'+
+        '<div class="replay-icon '+((step.type==="client"||step.type==="prospect")?"c":"r")+'">'+((step.type==="client"||step.type==="prospect")?"🗣":"💬")+'</div>'+
         '<div>'+
           '<div class="replay-content">'+esc(step.text)+'</div>'+
           '<div class="replay-ts">'+new Date(step.ts).toLocaleTimeString()+'</div>'+
@@ -2402,10 +2536,18 @@ checkUser();
      SUPABASE SCHEMA — Run this SQL in your Supabase SQL editor
      ═══════════════════════════════════════════════════════════
      
+-- ═══════════════════════════════════════════════════════════
+-- CONVERSATION TREE — conversation_nodes now stores every line of
+-- dialogue (Me or Prospect) as its own row. parent_id links each
+-- node to the line that comes before it, so a node can have
+-- unlimited children at unlimited depth (a true tree), replacing
+-- the old flat "client objection → node_responses" model.
+-- ═══════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS conversation_nodes (
   id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id          UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  node_type        TEXT NOT NULL CHECK (node_type IN ('client','response','note')),
+  parent_id        UUID REFERENCES conversation_nodes(id) ON DELETE CASCADE,
+  speaker          TEXT NOT NULL CHECK (speaker IN ('me','prospect')),
   content          TEXT NOT NULL,
   category         TEXT DEFAULT 'other',
   tags             TEXT DEFAULT '',
@@ -2416,16 +2558,13 @@ CREATE TABLE IF NOT EXISTS conversation_nodes (
   created_at       TIMESTAMPTZ DEFAULT NOW(),
   updated_at       TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS conversation_nodes_parent_idx ON conversation_nodes(parent_id);
+-- parent_id has ON DELETE CASCADE, so deleting one node automatically
+-- deletes its entire subtree (all descendants) in a single query.
 
-CREATE TABLE IF NOT EXISTS node_responses (
-  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  node_id       UUID REFERENCES conversation_nodes(id) ON DELETE CASCADE NOT NULL,
-  user_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  content       TEXT NOT NULL,
-  times_used    INTEGER DEFAULT 0,
-  success_count INTEGER DEFAULT 0,
-  created_at    TIMESTAMPTZ DEFAULT NOW()
-);
+-- node_responses is superseded by parent_id above — a "response" is
+-- now just a conversation_nodes row with speaker='me' and a parent_id.
+-- See the migration block below if you're upgrading an existing DB.
 
 CREATE TABLE IF NOT EXISTS node_versions (
   id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
