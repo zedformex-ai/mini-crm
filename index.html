@@ -85,6 +85,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .btn-load{width:100%;margin-top:20px;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;}
 .btn-load:hover{background:var(--blue-light);}
 .sidebar-footer{padding:16px;border-top:1px solid var(--navy3);}
+.sidebar-collapse-btn{width:24px;height:24px;border-radius:6px;background:var(--navy2);border:1px solid var(--navy3);color:#c8d8ec;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;position:absolute;top:14px;right:14px;}
+.sidebar-collapse-btn:hover{background:var(--navy3);}
+.sidebar-reopen-btn{display:none;position:fixed;top:16px;left:16px;z-index:200;width:36px;height:36px;border-radius:8px;background:var(--navy);color:#fff;border:1px solid var(--navy3);cursor:pointer;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(0,0,0,.18);}
+.sidebar-reopen-btn:hover{background:var(--navy2);}
 .btn-logout{width:100%;padding:9px;background:transparent;color:#6b8aaa;border:1px solid var(--navy3);border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s;}
 .btn-logout:hover{background:var(--navy2);color:#fff;}
 
@@ -667,11 +671,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
 <div class="shell">
 
+  <button class="sidebar-reopen-btn" id="mainSidebarReopenBtn" onclick="toggleMainSidebar()" title="Show sidebar">☰</button>
+
   <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="sidebar-header">
+    <div class="sidebar-header" style="position:relative;">
       <div class="brand">Zedformex <span>CRM</span></div>
       <div class="brand-sub">v3 · Sales OS</div>
+      <button class="sidebar-collapse-btn" onclick="toggleMainSidebar()" title="Hide sidebar">‹</button>
     </div>
 
     <div class="nav-tabs">
@@ -785,6 +792,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div class="tree-sidebar-header">
             <h3>Conversation Nodes</h3>
             <button class="btn-sm primary" onclick="openNodeModal(null)" style="font-size:11px;padding:5px 10px;">+ New Root</button>
+            <button class="btn-sm dark" onclick="toggleNodesPane()" style="font-size:11px;padding:5px 8px;" title="Hide panel">‹</button>
           </div>
           <div class="ts-search">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -802,6 +810,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <!-- Canvas -->
         <div class="tree-main">
           <div class="tree-toolbar">
+            <button class="btn-sm dark" id="nodesReopenBtn" onclick="toggleNodesPane()" style="font-size:11px;padding:5px 10px;display:none;">☰ Nodes</button>
             <h3 id="canvasTitle">Select a node to explore</h3>
             <span class="kb-hint">Drag canvas to pan</span>
             <span class="kb-hint">Scroll to zoom</span>
@@ -1122,6 +1131,24 @@ let callObjIndex    = 0;     // for Tab cycling
 // Node modal state
 let editingNode     = null;
 let pendingParentId = null; // parent to attach a new node to (null = new root)
+
+/* ── Pane collapse: main sidebar + conversation nodes panel ── */
+function toggleMainSidebar() {
+  const sb = document.querySelector(".sidebar");
+  const reopenBtn = document.getElementById("mainSidebarReopenBtn");
+  const hidden = sb.style.display === "none";
+  sb.style.display = hidden ? "" : "none";
+  reopenBtn.style.display = hidden ? "none" : "flex";
+}
+
+function toggleNodesPane() {
+  const sb = document.querySelector(".tree-sidebar");
+  const reopenBtn = document.getElementById("nodesReopenBtn");
+  const hidden = sb.style.display === "none";
+  sb.style.display = hidden ? "" : "none";
+  reopenBtn.style.display = hidden ? "none" : "inline-flex";
+  requestAnimationFrame(drawCanvas);
+}
 
 /* ═══════════════════════════════════════════════════════════
    USA DATA
@@ -1666,6 +1693,18 @@ async function deleteNode(node) {
 ═══════════════════════════════════════════════════════════ */
 const CNODE_W = 200, CNODE_H = 70, CNODE_GAP_X = 30, CNODE_GAP_Y = 100;
 
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(" ");
+  let line = "", lines = [];
+  words.forEach(w=>{
+    const test = line + (line?" ":"") + w;
+    if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = w; }
+    else line = test;
+  });
+  if(line) lines.push(line);
+  return lines;
+}
+
 function drawCanvas() {
   const canvas = document.getElementById("treeCanvas");
   const wrap   = canvas.parentElement;
@@ -1680,8 +1719,11 @@ function drawCanvas() {
   const root = getRootOf(currentNode);
   if(!root) return;
 
-  // ── Recursive layout: every node gets a depth (row) and a center-x,
-  //    computed from its children so parents sit centered above them.
+  ctx.font = "500 12px 'DM Sans', sans-serif"; // must be set before measureText below
+
+  // ── Recursive layout: every node gets a depth (row), a center-x
+  //    computed from its children, and a height that grows to fit
+  //    every wrapped line of its text — nothing gets cut off.
   const positions = {};
   let nextX = 0;
   function measure(node, depth) {
@@ -1694,13 +1736,32 @@ function drawCanvas() {
       const xs = kids.map(k=>measure(k, depth+1));
       x = (xs[0] + xs[xs.length-1]) / 2;
     }
-    positions[node.id] = {x, depth, node};
+    const icon  = node.speaker==="prospect" ? "🗣 " : "💬 ";
+    const lines = wrapText(ctx, icon+node.content, CNODE_W-24);
+    const h     = Math.max(CNODE_H, 34 + lines.length*18);
+    positions[node.id] = {x, depth, node, lines, h};
     return x;
   }
   measure(root, 0);
   // Recenter so the root sits at x=0 (canvas center)
   const rootX = positions[root.id].x;
   Object.values(positions).forEach(p=>{ p.x -= rootX; });
+
+  // Row layout: every node at the same depth shares the same top-y,
+  // and each row is as tall as its tallest node, so taller boxes
+  // never overlap the row below them.
+  const maxDepth = Math.max(...Object.values(positions).map(p=>p.depth));
+  const rowHeights = [];
+  for(let d=0; d<=maxDepth; d++){
+    const hs = Object.values(positions).filter(p=>p.depth===d).map(p=>p.h);
+    rowHeights[d] = hs.length ? Math.max(...hs) : CNODE_H;
+  }
+  const rowTopY = [];
+  let acc = 0;
+  for(let d=0; d<=maxDepth; d++){
+    rowTopY[d] = acc;
+    acc += rowHeights[d] + CNODE_GAP_Y;
+  }
 
   const cx = canvas.width/2 + canvasOffX;
   const cy = 60 + canvasOffY;
@@ -1715,8 +1776,8 @@ function drawCanvas() {
     getChildren(p.node.id).forEach(k=>{
       const kp = positions[k.id];
       if(!kp) return;
-      const py = p.depth*(CNODE_H+CNODE_GAP_Y) + CNODE_H;
-      const ky = kp.depth*(CNODE_H+CNODE_GAP_Y);
+      const py = rowTopY[p.depth] + p.h;
+      const ky = rowTopY[kp.depth];
       ctx.beginPath();
       ctx.moveTo(p.x, py);
       ctx.lineTo(kp.x, ky);
@@ -1728,10 +1789,9 @@ function drawCanvas() {
 
   // Nodes — every node in the tree, clickable
   Object.values(positions).forEach(p=>{
-    const topY = p.depth*(CNODE_H+CNODE_GAP_Y);
     const rn = {
-      x: p.x - CNODE_W/2, y: topY, w: CNODE_W, h: CNODE_H,
-      speaker: p.node.speaker, text: p.node.content,
+      x: p.x - CNODE_W/2, y: rowTopY[p.depth], w: CNODE_W, h: p.h,
+      speaker: p.node.speaker, lines: p.lines,
       selected: currentNode && p.node.id===currentNode.id
     };
     drawNode(ctx, rn);
@@ -1771,22 +1831,13 @@ function drawNode(ctx, n) {
     ctx.stroke();
   }
 
-  // text
+  // text — uses the lines already wrapped/measured during layout,
+  // so every line is drawn (no 3-line cap, nothing gets cut off)
   ctx.fillStyle=c.text;
   ctx.font="500 12px 'DM Sans', sans-serif";
   ctx.textAlign="center";
-  const icon = isProspect ? "🗣 " : "💬 ";
-  const words = (icon+n.text).split(" ");
-  let line="", lines=[];
-  words.forEach(w=>{
-    const test=line+(line?" ":"")+w;
-    if(ctx.measureText(test).width>n.w-20&&line){lines.push(line);line=w;}
-    else line=test;
-  });
-  lines.push(line);
-  lines=lines.slice(0,3);
-  const lh=16, totalH=lines.length*lh;
-  lines.forEach((l,i)=>ctx.fillText(l, n.x+n.w/2, n.y+n.h/2-totalH/2+i*lh+5));
+  const lh=18, totalH=n.lines.length*lh;
+  n.lines.forEach((l,i)=>ctx.fillText(l, n.x+n.w/2, n.y+n.h/2-totalH/2+i*lh+5));
 }
 
 // Click-to-select: converts a raw mouse position into tree-space
